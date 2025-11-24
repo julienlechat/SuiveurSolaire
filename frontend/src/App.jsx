@@ -23,6 +23,18 @@ function getPointColor(pointId) {
     return COLOR_PALETTE[(pointId - 1) % COLOR_PALETTE.length];
 }
 
+// Fonction pour détecter si un point est de la production (panneaux solaires)
+function isProductionPoint(pointName) {
+    const name = pointName.toLowerCase();
+    return (
+        name.includes("pv") ||
+        name.includes("solar") ||
+        name.includes("solaire") ||
+        name.includes("production") ||
+        name.includes("photovoltaique")
+    );
+}
+
 // Fonction pour obtenir la puissance max suggérée selon le type
 function getSuggestedMaxPower(pointName) {
     const name = pointName.toLowerCase();
@@ -40,11 +52,7 @@ function getSuggestedMaxPower(pointName) {
     ) {
         return 3000; // 3kW pour chauffe-eau
     }
-    if (
-        name.includes("pv") ||
-        name.includes("solar") ||
-        name.includes("solaire")
-    ) {
+    if (isProductionPoint(name)) {
         return 3000; // 3kW pour panneaux solaires
     }
     return 3000; // Par défaut
@@ -178,7 +186,9 @@ function App() {
                             <input
                                 type="date"
                                 value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
+                                onChange={(e) =>
+                                    setSelectedDate(e.target.value)
+                                }
                                 className="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
@@ -232,6 +242,7 @@ function App() {
                                     const maxPower = getSuggestedMaxPower(
                                         point.point_name
                                     );
+                                    const isProd = isProductionPoint(point.point_name);
 
                                     return (
                                         <HorizontalGauge
@@ -244,10 +255,13 @@ function App() {
                                             voltage={point.voltage_v}
                                             current={point.current_a}
                                             direction={
-                                                point.direction_export
+                                                isProd
+                                                    ? "production"
+                                                    : point.direction_export
                                                     ? "export"
                                                     : "import"
                                             }
+                                            isProduction={isProd}
                                         />
                                     );
                                 })}

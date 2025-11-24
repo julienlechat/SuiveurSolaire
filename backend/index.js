@@ -270,19 +270,66 @@ app.get("/api/history-graph", async (req, res) => {
         let totalAvgPower = 0;
         let pointCount = 0;
 
+        // Helper function to detect production points (solar panels)
+        const isProductionPoint = (name) => {
+            const lowerName = name.toLowerCase();
+            return lowerName.includes('pv') || 
+                   lowerName.includes('solar') || 
+                   lowerName.includes('solaire') ||
+                   lowerName.includes('production') ||
+                   lowerName.includes('photovoltaique');
+        };
+
+        // Calculer aussi les exports pour chaque point
+        const exportSql = `
+            SELECT
+                mp.id AS point_id,
+                MIN(m.export_kwh_total) AS export_start,
+                MAX(m.export_kwh_total) AS export_end
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            GROUP BY mp.id
+            ORDER BY mp.id
+        `;
+
+        const exportResult = await pool.query(exportSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+        const exportsByPointId = {};
+        exportResult.rows.forEach(row => {
+            const production = row.export_end && row.export_start
+                ? parseFloat(row.export_end) - parseFloat(row.export_start)
+                : 0;
+            exportsByPointId[row.point_id] = production;
+        });
+
+        let totalProduction = 0;
+
         const pointStats = statsResult.rows.map(row => {
-            const consumption = row.import_end && row.import_start
+            const consumption = row.import_end && row.import_start 
                 ? parseFloat(row.import_end) - parseFloat(row.import_start)
                 : 0;
             
-            totalConsumption += consumption;
+            const production = exportsByPointId[row.point_id] || 0;
+            const isProduction = isProductionPoint(row.point_name);
+
+            // Si c'est un point de production, on compte la production
+            if (isProduction) {
+                totalProduction += production;
+            } else {
+                totalConsumption += consumption;
+            }
+
             totalAvgPower += parseFloat(row.avg_power || 0);
             pointCount++;
 
             return {
                 point_id: row.point_id,
                 point_name: row.point_name,
+                is_production: isProduction,
                 consumption_kwh: consumption,
+                production_kwh: production,
                 avg_power: parseFloat(row.avg_power || 0),
                 max_power: parseFloat(row.max_power || 0),
             };
@@ -290,7 +337,9 @@ app.get("/api/history-graph", async (req, res) => {
 
         const averagePower = pointCount > 0 ? totalAvgPower / pointCount : 0;
         const pricePerKwh = 0.18; // Prix moyen - pourrait venir de la config
+        const sellPricePerKwh = 0.13; // Prix de rachat photovoltaïque
         const estimatedCost = totalConsumption * pricePerKwh;
+        const estimatedRevenue = totalProduction * sellPricePerKwh;
 
         res.json({
             ok: true,
@@ -298,11 +347,14 @@ app.get("/api/history-graph", async (req, res) => {
             measurements: result.rows,
             stats: {
                 totalConsumption,
+                totalProduction,
                 estimatedCost,
+                estimatedRevenue,
                 averagePower,
                 maxPower: peakResult.rows[0]?.power_w || 0,
                 maxPowerTime: peakResult.rows[0]?.ts || null,
                 pricePerKwh,
+                sellPricePerKwh,
                 pointStats,
             },
         });

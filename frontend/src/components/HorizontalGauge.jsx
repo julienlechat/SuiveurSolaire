@@ -11,6 +11,7 @@ export default function HorizontalGauge({
     voltage = null,
     current = null,
     direction = "import",
+    isProduction = false,
 }) {
     // Calculer le pourcentage (0-100%)
     const percentage = Math.min((Math.abs(value) / max) * 100, 100);
@@ -90,12 +91,18 @@ export default function HorizontalGauge({
                 {value !== 0 && (
                     <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            direction === "export"
+                            isProduction
+                                ? "bg-yellow-100 text-yellow-700"
+                                : direction === "export"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
                         }`}
                     >
-                        {direction === "export" ? "↑ Export" : "↓ Import"}
+                        {isProduction
+                            ? "☀️ Production"
+                            : direction === "export"
+                            ? "↑ Export"
+                            : "↓ Import"}
                     </span>
                 )}
             </div>

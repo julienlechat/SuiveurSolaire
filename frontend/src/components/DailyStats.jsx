@@ -19,8 +19,10 @@ export default function DailyStats({ stats }) {
         });
     };
 
+    const hasProduction = stats?.totalProduction > 0;
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${hasProduction ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4`}>
             {/* Consommation totale */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                 <div className="flex items-center gap-2 mb-2">
@@ -117,6 +119,34 @@ export default function DailyStats({ stats }) {
                     Puissance moyenne
                 </div>
             </div>
+
+            {/* Production solaire (si applicable) */}
+            {hasProduction && (
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
+                    <div className="flex items-center gap-2 mb-2">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="w-5 h-5 text-yellow-600"
+                        >
+                            <path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75ZM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18ZM7.758 17.303a.75.75 0 0 0-1.061-1.06l-1.591 1.59a.75.75 0 0 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12ZM6.697 7.757a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 0 0-1.061 1.06l1.59 1.591Z" />
+                        </svg>
+                        <span className="text-xs font-medium text-yellow-700 uppercase">
+                            Production
+                        </span>
+                    </div>
+                    <div className="text-3xl font-bold text-yellow-900">
+                        {formatNumber(stats?.totalProduction || 0, 2)}
+                        <span className="text-lg font-normal text-yellow-700 ml-1">
+                            kWh
+                        </span>
+                    </div>
+                    <div className="text-xs text-yellow-600 mt-1">
+                        Revenu: {formatNumber(stats?.estimatedRevenue || 0, 2)} €
+                    </div>
+                </div>
+            )}
 
             {/* Pic de puissance */}
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">

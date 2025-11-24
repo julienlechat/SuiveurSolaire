@@ -56,11 +56,20 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         });
     });
 
+    // Palette de couleurs avec gradients
+    const gradientColors = [
+        { border: "#8b5cf6", bg1: "#8b5cf680", bg2: "#8b5cf610" }, // Violet
+        { border: "#ec4899", bg1: "#ec489980", bg2: "#ec489910" }, // Rose
+        { border: "#f59e0b", bg1: "#f59e0b80", bg2: "#f59e0b10" }, // Orange
+        { border: "#10b981", bg1: "#10b98180", bg2: "#10b98110" }, // Vert
+        { border: "#3b82f6", bg1: "#3b82f680", bg2: "#3b82f610" }, // Bleu
+        { border: "#ef4444", bg1: "#ef444480", bg2: "#ef444410" }, // Rouge
+    ];
+
     // Créer les datasets pour Chart.js
     const datasets = Object.entries(pointsData).map(
         ([pointId, pointData], index) => {
-            const color =
-                colorPalette[index] || `hsl(${index * 90}, 70%, 50%)`;
+            const colorScheme = gradientColors[index] || gradientColors[0];
 
             // Créer un array avec toutes les valeurs pour chaque timestamp
             const data = allTimestamps.map((ts) => {
@@ -73,13 +82,25 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
             return {
                 label: pointData.name,
                 data: data,
-                borderColor: color,
-                backgroundColor: color + "20",
-                borderWidth: 2,
+                borderColor: colorScheme.border,
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const { ctx, chartArea } = chart;
+                    if (!chartArea) return colorScheme.bg1;
+                    
+                    // Créer un gradient vertical
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    gradient.addColorStop(0, colorScheme.bg2);
+                    gradient.addColorStop(1, colorScheme.bg1);
+                    return gradient;
+                },
+                borderWidth: 3,
                 pointRadius: 0,
-                pointHoverRadius: 4,
+                pointHoverRadius: 6,
+                pointHoverBorderWidth: 2,
+                pointHoverBackgroundColor: "#fff",
                 tension: 0.4,
-                fill: false,
+                fill: true,
             };
         }
     );
@@ -103,11 +124,24 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     usePointStyle: true,
                     padding: 15,
                     font: {
-                        size: 12,
+                        size: 13,
+                        weight: "500",
                     },
+                    boxWidth: 12,
+                    boxHeight: 12,
                 },
             },
             tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: {
+                    size: 13,
+                    weight: "600",
+                },
+                bodyFont: {
+                    size: 12,
+                },
                 callbacks: {
                     label: function (context) {
                         let label = context.dataset.label || "";
@@ -131,17 +165,33 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     maxRotation: 0,
                     autoSkip: true,
                     maxTicksLimit: 12,
+                    font: {
+                        size: 11,
+                    },
+                    color: "#6b7280",
+                },
+                border: {
+                    display: false,
                 },
             },
             y: {
                 beginAtZero: true,
                 grid: {
                     color: "rgba(0, 0, 0, 0.05)",
+                    drawBorder: false,
                 },
                 ticks: {
+                    font: {
+                        size: 11,
+                    },
+                    color: "#6b7280",
+                    padding: 8,
                     callback: function (value) {
                         return value + " W";
                     },
+                },
+                border: {
+                    display: false,
                 },
             },
         },
