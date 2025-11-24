@@ -127,6 +127,61 @@ app.get("/api/history", async (req, res) => {
 });
 
 /**
+ * Route pour obtenir les mesures récentes (historique)
+ * GET /api/recent-measurements?limit=100&hours=1
+ * 
+ * Query params:
+ * - limit: nombre max de mesures à retourner (défaut: 100, max: 500)
+ * - hours: nombre d'heures d'historique (défaut: 1, max: 24)
+ */
+app.get("/api/recent-measurements", async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+        const hours = Math.min(parseInt(req.query.hours) || 1, 24);
+        
+        // Calculer la date de début
+        const since = new Date();
+        since.setHours(since.getHours() - hours);
+
+        const sql = `
+            SELECT
+                m.id,
+                m.ts,
+                mp.id AS point_id,
+                mp.name AS point_name,
+                mp.module,
+                mp.channel,
+                m.power_w,
+                m.voltage_v,
+                m.current_a,
+                m.direction_export,
+                m.import_kwh_total,
+                m.export_kwh_total,
+                m.hour_type
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND mp.active = true
+            ORDER BY m.ts DESC
+            LIMIT $2
+        `;
+        
+        const result = await pool.query(sql, [since.toISOString(), limit]);
+
+        res.json({
+            ok: true,
+            count: result.rows.length,
+            since: since.toISOString(),
+            limit,
+            measurements: result.rows,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
  * Route pour obtenir les statistiques journalières
  * GET /api/daily-stats?date=YYYY-MM-DD
  */

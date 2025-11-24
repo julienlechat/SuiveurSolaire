@@ -1,34 +1,41 @@
 import { useEffect, useState } from "react";
-import { fetchLatest } from "./api";
+import { fetchLatest, fetchRecentMeasurements } from "./api";
 import Sidebar from "./components/Sidebar";
 import PowerGauge from "./components/PowerGauge";
 import StatsCard from "./components/StatsCard";
+import MeasurementTable from "./components/MeasurementTable";
 
 const REFRESH_MS = Number(import.meta.env.VITE_REFRESH_MS || 5000);
 
-// Mapping des points de mesure
-const POINT_CONFIG = {
-    'House': {
-        label: 'Energie Logement',
-        color: '#3b82f6',
-        maxPower: 5000
-    },
-    'WaterHeater': {
-        label: 'Energie Chauffe-eau',
-        color: '#ef4444',
-        maxPower: 3000
-    },
-    'PV': {
-        label: 'Energie Produite',
-        color: '#f59e0b',
-        maxPower: 3000
-    },
-    'Spare': {
-        label: 'Spare',
-        color: '#8b5cf6',
-        maxPower: 3000
+// Palette de couleurs pour les jauges (assignées automatiquement)
+const COLOR_PALETTE = [
+    '#3b82f6', // Bleu
+    '#ef4444', // Rouge
+    '#f59e0b', // Orange
+    '#10b981', // Vert
+    '#8b5cf6', // Violet
+    '#ec4899', // Rose
+];
+
+// Fonction pour obtenir la couleur d'un point de mesure
+function getPointColor(pointId) {
+    return COLOR_PALETTE[(pointId - 1) % COLOR_PALETTE.length];
+}
+
+// Fonction pour obtenir la puissance max suggérée selon le type
+function getSuggestedMaxPower(pointName) {
+    const name = pointName.toLowerCase();
+    if (name.includes('house') || name.includes('maison') || name.includes('logement')) {
+        return 5000; // 5kW pour une maison
     }
-};
+    if (name.includes('water') || name.includes('chauffe') || name.includes('heater')) {
+        return 3000; // 3kW pour chauffe-eau
+    }
+    if (name.includes('pv') || name.includes('solar') || name.includes('solaire')) {
+        return 3000; // 3kW pour panneaux solaires
+    }
+    return 3000; // Par défaut
+}
 
 function formatNumber(value, digits = 2) {
     if (value === null || value === undefined) return "—";
@@ -39,11 +46,15 @@ function formatNumber(value, digits = 2) {
 
 function App() {
     const [points, setPoints] = useState([]);
+    const [measurements, setMeasurements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingHistory, setLoadingHistory] = useState(true);
     const [error, setError] = useState(null);
     const [lastUpdate, setLastUpdate] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('disconnected');
+    const [historyHours, setHistoryHours] = useState(1);
 
+    // Charger les données en temps réel
     useEffect(() => {
         let timer;
 
@@ -73,6 +84,29 @@ function App() {
 
         return () => clearInterval(timer);
     }, []);
+
+    // Charger l'historique des mesures
+    useEffect(() => {
+        async function loadHistory() {
+            try {
+                setLoadingHistory(true);
+                const data = await fetchRecentMeasurements(100, historyHours);
+                if (data.ok) {
+                    setMeasurements(data.measurements || []);
+                }
+            } catch (err) {
+                console.error("Erreur chargement historique:", err);
+            } finally {
+                setLoadingHistory(false);
+            }
+        }
+
+        loadHistory();
+        // Recharger l'historique toutes les 30 secondes
+        const timer = setInterval(loadHistory, 30000);
+
+        return () => clearInterval(timer);
+    }, [historyHours]);
 
     // Calculer les statistiques du jour (simulées pour le moment)
     const calculateDailyStats = () => {
@@ -153,24 +187,24 @@ function App() {
                         {!loading && points.length > 0 && (
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
                                 {points.map((point) => {
-                                    const config = POINT_CONFIG[point.point_name] || {
-                                        label: point.point_name,
-                                        color: '#6b7280',
-                                        maxPower: 3000
-                                    };
+                                    const color = getPointColor(point.point_id);
+                                    const maxPower = getSuggestedMaxPower(point.point_name);
 
                                     return (
                                         <div key={point.point_id} className="flex flex-col items-center">
                                             <PowerGauge
                                                 value={point.power_w}
-                                                max={config.maxPower}
-                                                label={config.label}
+                                                max={maxPower}
+                                                label={point.point_name}
                                                 unit="W"
-                                                color={config.color}
+                                                color={color}
                                                 direction={point.direction_export ? 'export' : 'import'}
                                             />
                                             <div className="mt-4 space-y-1 text-center">
-                                                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
+                                                <div className="text-xs text-gray-500 italic">
+                                                    {point.description || `Module ${point.module} - Channel ${point.channel}`}
+                                                </div>
+                                                <div className="flex items-center justify-center gap-4 text-xs text-gray-600 mt-2">
                                                     <div>
                                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 inline mr-1 text-blue-500">
                                                             <path d="M11.7 2.805a.75.75 0 0 1 .6 0A60.65 60.65 0 0 1 22.83 8.72a.75.75 0 0 1-.231 1.337 49.948 49.948 0 0 0-9.902 3.912l-.003.002c-.114.06-.227.119-.34.18a.75.75 0 0 1-.707 0A50.88 50.88 0 0 0 7.5 12.173v-.224c0-.131.067-.248.172-.311a54.615 54.615 0 0 1 4.653-2.52.75.75 0 0 0-.65-1.352 56.123 56.123 0 0 0-4.78 2.589 1.858 1.858 0 0 0-.859 1.228 49.803 49.803 0 0 0-4.634-1.527.75.75 0 0 1-.231-1.337A60.653 60.653 0 0 1 11.7 2.805Z" />
@@ -195,7 +229,7 @@ function App() {
 
                     {/* Section des statistiques du jour */}
                     {dailyStats && (
-                        <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
                             <div className="flex items-center gap-2 mb-6">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-orange-600">
                                     <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75ZM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 0 1-1.875-1.875V8.625ZM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 0 1 3 19.875v-6.75Z" />
@@ -257,6 +291,42 @@ function App() {
                             </div>
                         </div>
                     )}
+
+                    {/* Section de l'historique des mesures */}
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-blue-600">
+                                    <path fillRule="evenodd" d="M2.625 6.75a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875 0A.75.75 0 0 1 8.25 6h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM2.625 12a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0ZM7.5 12a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12A.75.75 0 0 1 7.5 12Zm-4.875 5.25a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875 0a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+                                </svg>
+                                <h2 className="text-lg font-semibold text-gray-900">Historique des mesures</h2>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm text-gray-600">Période :</label>
+                                <select
+                                    value={historyHours}
+                                    onChange={(e) => setHistoryHours(parseInt(e.target.value))}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="1">Dernière heure</option>
+                                    <option value="3">3 dernières heures</option>
+                                    <option value="6">6 dernières heures</option>
+                                    <option value="12">12 dernières heures</option>
+                                    <option value="24">24 dernières heures</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {loadingHistory && (
+                            <div className="flex justify-center items-center py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                        )}
+
+                        {!loadingHistory && (
+                            <MeasurementTable measurements={measurements} />
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

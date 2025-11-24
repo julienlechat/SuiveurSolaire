@@ -38,3 +38,13 @@ export async function fetchDailyStats(date = null) {
 
     return res.json();
 }
+
+export async function fetchRecentMeasurements(limit = 100, hours = 1) {
+    const url = `${API_BASE}/api/recent-measurements?limit=${limit}&hours=${hours}`;
+    console.log("[API] GET", url);
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    return res.json();
+}
