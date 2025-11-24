@@ -127,6 +127,81 @@ app.get("/api/history", async (req, res) => {
 });
 
 /**
+ * Route pour obtenir les statistiques journalières
+ * GET /api/daily-stats?date=YYYY-MM-DD
+ */
+app.get("/api/daily-stats", async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        // Si pas de date fournie, utiliser aujourd'hui
+        const targetDate = date ? new Date(date) : new Date();
+        if (Number.isNaN(targetDate.getTime())) {
+            return res.status(400).json({
+                ok: false,
+                error: "Invalid date format",
+            });
+        }
+
+        // Début et fin de la journée
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Requête pour obtenir les stats par point de mesure
+        const sql = `
+            SELECT
+                mp.id AS point_id,
+                mp.name AS point_name,
+                COUNT(*) AS measurement_count,
+                MIN(m.import_kwh_total) AS import_kwh_start,
+                MAX(m.import_kwh_total) AS import_kwh_end,
+                MIN(m.export_kwh_total) AS export_kwh_start,
+                MAX(m.export_kwh_total) AS export_kwh_end,
+                AVG(m.power_w) AS avg_power_w,
+                MAX(m.power_w) AS max_power_w,
+                MIN(m.power_w) AS min_power_w
+            FROM measurement_point mp
+            LEFT JOIN measurement m ON m.point_id = mp.id
+                AND m.ts >= $1
+                AND m.ts <= $2
+            WHERE mp.active = true
+            GROUP BY mp.id, mp.name
+            ORDER BY mp.id;
+        `;
+        
+        const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Calculer les différences pour obtenir la consommation/production du jour
+        const stats = result.rows.map(row => ({
+            point_id: row.point_id,
+            point_name: row.point_name,
+            measurement_count: parseInt(row.measurement_count) || 0,
+            import_kwh: row.import_kwh_end && row.import_kwh_start 
+                ? parseFloat(row.import_kwh_end) - parseFloat(row.import_kwh_start)
+                : 0,
+            export_kwh: row.export_kwh_end && row.export_kwh_start
+                ? parseFloat(row.export_kwh_end) - parseFloat(row.export_kwh_start)
+                : 0,
+            avg_power_w: row.avg_power_w ? parseFloat(row.avg_power_w) : 0,
+            max_power_w: row.max_power_w ? parseFloat(row.max_power_w) : 0,
+            min_power_w: row.min_power_w ? parseFloat(row.min_power_w) : 0,
+        }));
+
+        res.json({
+            ok: true,
+            date: targetDate.toISOString().split('T')[0],
+            stats,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
  * Helper : récupère l'id du measurement_point pour un (module, channel)
  */
 async function getMeasurementPointId(client, moduleNumber, channelNumber) {
