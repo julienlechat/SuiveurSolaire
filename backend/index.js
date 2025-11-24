@@ -182,6 +182,137 @@ app.get("/api/recent-measurements", async (req, res) => {
 });
 
 /**
+ * Route pour obtenir les données graphiques (évolution minute par minute)
+ * GET /api/history-graph?date=YYYY-MM-DD
+ * 
+ * Retourne les données formatées pour Chart.js :
+ * - timestamps (labels)
+ * - datasets par point de mesure
+ */
+app.get("/api/history-graph", async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        // Si pas de date fournie, utiliser aujourd'hui
+        const targetDate = date ? new Date(date) : new Date();
+        if (Number.isNaN(targetDate.getTime())) {
+            return res.status(400).json({
+                ok: false,
+                error: "Invalid date format",
+            });
+        }
+
+        // Début et fin de la journée
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Requête pour récupérer toutes les mesures de la journée, groupées par timestamp
+        const sql = `
+            SELECT
+                m.ts,
+                mp.id AS point_id,
+                mp.name AS point_name,
+                m.power_w,
+                m.voltage_v,
+                m.current_a,
+                m.import_kwh_total,
+                m.export_kwh_total
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            ORDER BY m.ts ASC, mp.id ASC
+        `;
+        
+        const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Calculer aussi les statistiques du jour
+        const statsSql = `
+            SELECT
+                mp.id AS point_id,
+                mp.name AS point_name,
+                COUNT(*) AS measurement_count,
+                AVG(m.power_w) AS avg_power,
+                MAX(m.power_w) AS max_power,
+                MIN(m.import_kwh_total) AS import_start,
+                MAX(m.import_kwh_total) AS import_end
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            GROUP BY mp.id, mp.name
+            ORDER BY mp.id
+        `;
+
+        const statsResult = await pool.query(statsSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Trouver le pic de puissance global avec son timestamp
+        const peakSql = `
+            SELECT m.power_w, m.ts
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            ORDER BY m.power_w DESC
+            LIMIT 1
+        `;
+
+        const peakResult = await pool.query(peakSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Calculer les stats globales
+        let totalConsumption = 0;
+        let totalAvgPower = 0;
+        let pointCount = 0;
+
+        const pointStats = statsResult.rows.map(row => {
+            const consumption = row.import_end && row.import_start
+                ? parseFloat(row.import_end) - parseFloat(row.import_start)
+                : 0;
+            
+            totalConsumption += consumption;
+            totalAvgPower += parseFloat(row.avg_power || 0);
+            pointCount++;
+
+            return {
+                point_id: row.point_id,
+                point_name: row.point_name,
+                consumption_kwh: consumption,
+                avg_power: parseFloat(row.avg_power || 0),
+                max_power: parseFloat(row.max_power || 0),
+            };
+        });
+
+        const averagePower = pointCount > 0 ? totalAvgPower / pointCount : 0;
+        const pricePerKwh = 0.18; // Prix moyen - pourrait venir de la config
+        const estimatedCost = totalConsumption * pricePerKwh;
+
+        res.json({
+            ok: true,
+            date: targetDate.toISOString().split('T')[0],
+            measurements: result.rows,
+            stats: {
+                totalConsumption,
+                estimatedCost,
+                averagePower,
+                maxPower: peakResult.rows[0]?.power_w || 0,
+                maxPowerTime: peakResult.rows[0]?.ts || null,
+                pricePerKwh,
+                pointStats,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
  * Route pour obtenir les statistiques journalières
  * GET /api/daily-stats?date=YYYY-MM-DD
  */
