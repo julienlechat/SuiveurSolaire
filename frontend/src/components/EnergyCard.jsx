@@ -41,7 +41,7 @@ export default function EnergyCard({
                             ? 'bg-emerald-50 text-emerald-700' 
                             : 'bg-amber-50 text-amber-700'
                     }`}>
-                        {isProduction ? '⚡ Production' : '🔌 Consommation'}
+                        {isProduction ? '↑ Production' : '↓ Consommation'}
                     </span>
                 </div>
 
@@ -57,11 +57,11 @@ export default function EnergyCard({
 
                 {/* Métriques secondaires */}
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                    {/* Tension */}
+                    {/* Tension - icône prise électrique */}
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-blue-600">
-                                <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clipRule="evenodd" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-blue-600">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M5.5 8h13M6 8v5a6 6 0 0012 0V8" />
                             </svg>
                         </div>
                         <div>
@@ -72,7 +72,7 @@ export default function EnergyCard({
                         </div>
                     </div>
 
-                    {/* Courant */}
+                    {/* Courant - icône éclair */}
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-600">
@@ -87,12 +87,13 @@ export default function EnergyCard({
                         </div>
                     </div>
 
-                    {/* Facteur de puissance (si disponible) */}
+                    {/* Facteur de puissance (si disponible) - icône cercle avec indicateur */}
                     {powerFactor !== null && (
                         <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-purple-600">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clipRule="evenodd" />
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-purple-600">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path d="M12 7v5l3 3" />
                                 </svg>
                             </div>
                             <div>
@@ -104,12 +105,12 @@ export default function EnergyCard({
                         </div>
                     )}
 
-                    {/* Fréquence (si disponible) */}
+                    {/* Fréquence (si disponible) - icône onde */}
                     {frequency !== null && (
                         <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-emerald-600">
-                                    <path fillRule="evenodd" d="M1 2.75A.75.75 0 0 1 1.75 2h16.5a.75.75 0 0 1 0 1.5H1.75A.75.75 0 0 1 1 2.75Zm0 14.5a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H1.75a.75.75 0 0 1-.75-.75ZM2.75 8a.75.75 0 0 0 0 1.5h.5a.75.75 0 0 0 0-1.5h-.5ZM7 8.75A.75.75 0 0 1 7.75 8h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 7 8.75Zm4 0a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h.5a.75.75 0 0 0 0-1.5h-.5ZM2 12.25a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1-.75-.75ZM6.75 11.5a.75.75 0 0 0 0 1.5h.5a.75.75 0 0 0 0-1.5h-.5Zm3.25.75a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 0 1.5h-.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h.5a.75.75 0 0 0 0-1.5h-.5Z" clipRule="evenodd" />
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-emerald-600">
+                                    <path d="M2 12h2l2-7 3 14 3-14 2 7h8" />
                                 </svg>
                             </div>
                             <div>
@@ -125,4 +126,3 @@ export default function EnergyCard({
         </div>
     );
 }
-

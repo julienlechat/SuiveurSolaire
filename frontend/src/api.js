@@ -60,3 +60,13 @@ export async function fetchHistoryGraph(date = null) {
 
     return res.json();
 }
+
+export async function fetchTempo() {
+    const url = `${API_BASE}/api/tempo`;
+    console.log("[API] GET", url);
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    return res.json();
+}

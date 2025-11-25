@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchLatest, fetchHistoryGraph } from "./api";
+import { fetchLatest, fetchHistoryGraph, fetchTempo } from "./api";
 import Sidebar from "./components/Sidebar";
 import EnergyCard from "./components/EnergyCard";
 import DailyStats from "./components/DailyStats";
 import PowerChart from "./components/PowerChart";
 import PointDetails from "./components/PointDetails";
+import TempoCard from "./components/TempoCard";
 
 const REFRESH_MS = Number(import.meta.env.VITE_REFRESH_MS || 5000);
 
@@ -25,8 +26,10 @@ function getPointColor(pointId) {
 function App() {
     const [points, setPoints] = useState([]);
     const [graphData, setGraphData] = useState(null);
+    const [tempoData, setTempoData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadingGraph, setLoadingGraph] = useState(true);
+    const [loadingTempo, setLoadingTempo] = useState(true);
     const [error, setError] = useState(null);
     const [lastUpdate, setLastUpdate] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState("disconnected");
@@ -71,6 +74,7 @@ function App() {
             try {
                 setLoadingGraph(true);
                 const data = await fetchHistoryGraph(selectedDate);
+                console.log("[App] Graph data received:", data);
                 if (data.ok) {
                     setGraphData(data);
                 }
@@ -84,6 +88,28 @@ function App() {
         loadGraph();
     }, [selectedDate]);
 
+    // Charger les infos Tempo
+    useEffect(() => {
+        async function loadTempo() {
+            try {
+                setLoadingTempo(true);
+                const data = await fetchTempo();
+                if (data.ok) {
+                    setTempoData(data);
+                }
+            } catch (err) {
+                console.error("Erreur chargement Tempo:", err);
+            } finally {
+                setLoadingTempo(false);
+            }
+        }
+
+        loadTempo();
+        // Rafraîchir toutes les 15 minutes
+        const timer = setInterval(loadTempo, 15 * 60 * 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     const isToday = selectedDate === new Date().toISOString().split("T")[0];
     const isYesterday =
         selectedDate ===
@@ -91,6 +117,11 @@ function App() {
 
     // Calculer la puissance totale en temps réel
     const totalPower = points.reduce((sum, p) => sum + (p.power_w || 0), 0);
+
+    // Trouver les stats du point maison (id 1) pour les afficher en priorité
+    const mainPointStats = graphData?.stats?.pointStats?.find(
+        (p) => p.point_id === 1
+    );
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-slate-100">
@@ -203,14 +234,25 @@ function App() {
 
                 {/* Contenu scrollable */}
                 <div className="p-8 space-y-6">
-                    {/* SECTION 1 : Stats globales du jour */}
-                    <DailyStats
-                        stats={graphData?.stats}
-                        loading={loadingGraph}
-                        totalPowerNow={totalPower}
-                        selectedDate={selectedDate}
-                        isToday={isToday}
-                    />
+                    {/* SECTION 1 : Stats globales du jour + Tempo */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-3">
+                            <DailyStats
+                                stats={graphData?.stats}
+                                mainPointStats={mainPointStats}
+                                loading={loadingGraph}
+                                totalPowerNow={totalPower}
+                                selectedDate={selectedDate}
+                                isToday={isToday}
+                            />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <TempoCard
+                                tempoData={tempoData}
+                                loading={loadingTempo}
+                            />
+                        </div>
+                    </div>
 
                     {/* SECTION 2 : Mesures en temps réel */}
                     {error && (
@@ -296,18 +338,26 @@ function App() {
                                         </p>
                                     </div>
                                 </div>
-                                {isToday && (
-                                    <span className="text-xs text-slate-400">
-                                        Heure actuelle:{" "}
-                                        {new Date().toLocaleTimeString(
-                                            "fr-FR",
-                                            {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            }
-                                        )}
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-3">
+                                    {graphData?.measurements && (
+                                        <span className="text-xs text-slate-400">
+                                            {graphData.measurements.length}{" "}
+                                            mesures
+                                        </span>
+                                    )}
+                                    {isToday && (
+                                        <span className="text-xs text-slate-400">
+                                            Heure actuelle:{" "}
+                                            {new Date().toLocaleTimeString(
+                                                "fr-FR",
+                                                {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                }
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="p-6">

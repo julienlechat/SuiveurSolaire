@@ -1,6 +1,6 @@
 /**
  * Détails par point de mesure
- * Design élégant avec cards compactes
+ * Design élégant avec cards compactes et icônes appropriées
  */
 export default function PointDetails({ pointStats = [], currentPoints = [], colorPalette = [] }) {
     const formatNumber = (value, decimals = 1) => {
@@ -70,12 +70,12 @@ export default function PointDetails({ pointStats = [], currentPoints = [], colo
 
                         {/* Stats du jour */}
                         <div className="space-y-3 pt-4 border-t border-slate-100">
-                            {/* Consommation (Import) */}
+                            {/* Consommation (Import) - icône prise/flèche vers le bas */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-red-500">
-                                            <path fillRule="evenodd" d="M8 1a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5A.75.75 0 0 1 8 1ZM4.11 3.05a.75.75 0 0 1 0 1.06 5.5 5.5 0 1 0 7.78 0 .75.75 0 0 1 1.06-1.06 7 7 0 1 1-9.9 0 .75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-red-500">
+                                            <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.638l3.96-4.158a.75.75 0 1 1 1.08 1.04l-5.25 5.5a.75.75 0 0 1-1.08 0l-5.25-5.5a.75.75 0 1 1 1.08-1.04l3.96 4.158V3.75A.75.75 0 0 1 10 3Z" clipRule="evenodd" />
                                         </svg>
                                     </div>
                                     <span className="text-xs text-slate-600">Consommé</span>
@@ -85,12 +85,12 @@ export default function PointDetails({ pointStats = [], currentPoints = [], colo
                                 </span>
                             </div>
 
-                            {/* Production (Export) */}
+                            {/* Production (Export) - flèche vers le haut */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-emerald-500">
-                                            <path d="M10 3a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5A.75.75 0 0 1 10 3ZM10 1a2 2 0 0 0-1.907 1.406A6.993 6.993 0 0 0 3 9a7 7 0 0 0 14 0 6.993 6.993 0 0 0-5.093-6.594A2 2 0 0 0 10 1Z" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-emerald-500">
+                                            <path fillRule="evenodd" d="M10 17a.75.75 0 0 1-.75-.75V5.612L5.29 9.77a.75.75 0 0 1-1.08-1.04l5.25-5.5a.75.75 0 0 1 1.08 0l5.25 5.5a.75.75 0 1 1-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0 1 10 17Z" clipRule="evenodd" />
                                         </svg>
                                     </div>
                                     <span className="text-xs text-slate-600">Produit</span>
@@ -100,12 +100,12 @@ export default function PointDetails({ pointStats = [], currentPoints = [], colo
                                 </span>
                             </div>
 
-                            {/* Moyenne */}
+                            {/* Moyenne - icône onde/vague */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-blue-500">
-                                            <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.75-10.25a.75.75 0 0 0-1.5 0v4a.75.75 0 0 0 .3.6l2.5 1.875a.75.75 0 0 0 .9-1.2L8.75 8.625V4.75Z" clipRule="evenodd" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-blue-500">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0 4 3 6 0" />
                                         </svg>
                                     </div>
                                     <span className="text-xs text-slate-600">Moyenne</span>
@@ -115,12 +115,12 @@ export default function PointDetails({ pointStats = [], currentPoints = [], colo
                                 </span>
                             </div>
 
-                            {/* Max */}
+                            {/* Max/Pic - icône montagne/flèche vers le haut */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded bg-orange-50 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-orange-500">
-                                            <path fillRule="evenodd" d="M7.628 1.099a.75.75 0 0 1 .744 0l5.25 3a.75.75 0 0 1 0 1.302l-5.25 3a.75.75 0 0 1-.744 0l-5.25-3a.75.75 0 0 1 0-1.302l5.25-3Zm-.529 8.132L3.11 6.742l-1.738.992a.75.75 0 0 0 0 1.302l5.25 3a.75.75 0 0 0 .744 0l5.25-3a.75.75 0 0 0 0-1.302l-1.738-.992-3.99 2.28a.75.75 0 0 1-.744 0Z" clipRule="evenodd" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5 text-orange-500">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2 20l5-10 4 6 5-12 6 16" />
                                         </svg>
                                     </div>
                                     <span className="text-xs text-slate-600">Pic</span>
@@ -159,4 +159,3 @@ export default function PointDetails({ pointStats = [], currentPoints = [], colo
         </div>
     );
 }
-

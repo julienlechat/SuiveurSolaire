@@ -1,8 +1,8 @@
 /**
  * Statistiques globales du jour
- * Affichées en premier, design élégant avec icônes
+ * Utilise les stats du point principal (maison) pour les valeurs principales
  */
-export default function DailyStats({ stats, loading, totalPowerNow, selectedDate, isToday }) {
+export default function DailyStats({ stats, mainPointStats, loading, totalPowerNow, selectedDate, isToday }) {
     const formatNumber = (value, decimals = 2) => {
         if (value === null || value === undefined) return "—";
         const n = Number(value);
@@ -22,8 +22,8 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
     // Skeleton loading
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="bg-white rounded-xl p-5 animate-pulse">
                         <div className="h-8 w-8 bg-slate-200 rounded-lg mb-3"></div>
                         <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
@@ -34,21 +34,17 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
         );
     }
 
-    // Calculs avec valeurs par défaut
-    const totalConsumption = stats?.totalConsumption || 0;
-    const totalProduction = stats?.totalProduction || 0;
-    const estimatedCost = stats?.estimatedCost || 0;
-    const estimatedRevenue = stats?.estimatedRevenue || 0;
-    const averagePower = stats?.averagePower || 0;
-    const maxPower = stats?.maxPower || 0;
+    // Utiliser les stats du point maison (id 1) si disponible, sinon les stats globales
+    const totalConsumption = mainPointStats?.import_kwh ?? stats?.totalConsumption ?? 0;
+    const totalProduction = mainPointStats?.export_kwh ?? stats?.totalProduction ?? 0;
+    const estimatedCost = (mainPointStats?.import_kwh ?? stats?.totalConsumption ?? 0) * (stats?.pricePerKwh ?? 0.18);
+    const averagePower = mainPointStats?.avg_power ?? stats?.averagePower ?? 0;
+    const maxPower = mainPointStats?.max_power ?? stats?.maxPower ?? 0;
     const maxPowerTime = stats?.maxPowerTime;
-
-    // Bilan net (production - consommation)
-    const netBalance = totalProduction - totalConsumption;
-    const netCost = estimatedCost - estimatedRevenue;
+    const measurementCount = mainPointStats?.measurement_count ?? 0;
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Puissance actuelle */}
             {isToday && (
                 <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -65,11 +61,11 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
                 </div>
             )}
 
-            {/* Consommation totale */}
+            {/* Consommation totale - icône flèche vers le bas */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
                 <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-red-600">
-                        <path fillRule="evenodd" d="M5.5 17a4.5 4.5 0 0 1-1.44-8.765 4.5 4.5 0 0 1 8.302-3.046 3.5 3.5 0 0 1 4.504 4.272A4 4 0 0 1 15 17H5.5Zm5.25-9.25a.75.75 0 0 0-1.5 0v4.59l-1.95-2.1a.75.75 0 1 0-1.1 1.02l3.25 3.5a.75.75 0 0 0 1.1 0l3.25-3.5a.75.75 0 1 0-1.1-1.02l-1.95 2.1V7.75Z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.638l3.96-4.158a.75.75 0 1 1 1.08 1.04l-5.25 5.5a.75.75 0 0 1-1.08 0l-5.25-5.5a.75.75 0 1 1 1.08-1.04l3.96 4.158V3.75A.75.75 0 0 1 10 3Z" clipRule="evenodd" />
                     </svg>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mb-1">CONSOMMÉ</p>
@@ -77,23 +73,12 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
                     <span className="text-2xl font-bold text-slate-900">{formatNumber(totalConsumption, 2)}</span>
                     <span className="text-sm text-slate-500">kWh</span>
                 </div>
+                {measurementCount > 0 && (
+                    <p className="text-xs text-slate-400 mt-1">{measurementCount} mesures</p>
+                )}
             </div>
 
-            {/* Production totale */}
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-emerald-600">
-                        <path fillRule="evenodd" d="M5.5 17a4.5 4.5 0 0 1-1.44-8.765 4.5 4.5 0 0 1 8.302-3.046 3.5 3.5 0 0 1 4.504 4.272A4 4 0 0 1 15 17H5.5Zm3.75-2.75a.75.75 0 0 0 1.5 0V9.66l1.95 2.1a.75.75 0 1 0 1.1-1.02l-3.25-3.5a.75.75 0 0 0-1.1 0l-3.25 3.5a.75.75 0 1 0 1.1 1.02l1.95-2.1v4.59Z" clipRule="evenodd" />
-                    </svg>
-                </div>
-                <p className="text-xs text-slate-500 font-medium mb-1">PRODUIT</p>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-slate-900">{formatNumber(totalProduction, 2)}</span>
-                    <span className="text-sm text-slate-500">kWh</span>
-                </div>
-            </div>
-
-            {/* Coût estimé */}
+            {/* Coût estimé - icône euro */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
                 <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-purple-600">
@@ -103,21 +88,17 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
                 </div>
                 <p className="text-xs text-slate-500 font-medium mb-1">COÛT</p>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-slate-900">{formatNumber(netCost, 2)}</span>
+                    <span className="text-2xl font-bold text-slate-900">{formatNumber(estimatedCost, 2)}</span>
                     <span className="text-sm text-slate-500">€</span>
                 </div>
-                {totalProduction > 0 && (
-                    <p className="text-xs text-emerald-600 mt-1">
-                        -{formatNumber(estimatedRevenue, 2)}€ produit
-                    </p>
-                )}
+                <p className="text-xs text-slate-400 mt-1">@ {formatNumber(stats?.pricePerKwh ?? 0.18, 2)}€/kWh</p>
             </div>
 
-            {/* Puissance moyenne */}
+            {/* Puissance moyenne - icône onde */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
                 <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-blue-600">
-                        <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clipRule="evenodd" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-blue-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0 4 3 6 0" />
                     </svg>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mb-1">MOYENNE</p>
@@ -127,11 +108,11 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
                 </div>
             </div>
 
-            {/* Pic de puissance */}
+            {/* Pic de puissance - icône montagne */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
                 <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center mb-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-orange-600">
-                        <path fillRule="evenodd" d="M12.577 4.878a.75.75 0 0 1 .919-.53l4.78 1.281a.75.75 0 0 1 .531.919l-1.281 4.78a.75.75 0 0 1-1.449-.387l.81-3.022a19.407 19.407 0 0 0-5.594 5.203.75.75 0 0 1-1.139.093L7 10.06l-4.72 4.72a.75.75 0 0 1-1.06-1.061l5.25-5.25a.75.75 0 0 1 1.06 0l3.074 3.073a20.923 20.923 0 0 1 5.545-4.931l-3.042-.815a.75.75 0 0 1-.53-.919Z" clipRule="evenodd" />
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-orange-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 20l5-10 4 6 5-12 6 16" />
                     </svg>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mb-1">PIC</p>
@@ -140,9 +121,7 @@ export default function DailyStats({ stats, loading, totalPowerNow, selectedDate
                     <span className="text-sm text-slate-500">W</span>
                 </div>
                 {maxPowerTime && (
-                    <p className="text-xs text-slate-400 mt-1">
-                        à {formatTime(maxPowerTime)}
-                    </p>
+                    <p className="text-xs text-slate-400 mt-1">à {formatTime(maxPowerTime)}</p>
                 )}
             </div>
         </div>

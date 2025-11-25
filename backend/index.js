@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 
-const { getHourTypeForContract } = require("./tempoService");
+const { getHourTypeForContract, getTempoInfo } = require("./tempoService");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -231,6 +231,8 @@ app.get("/api/history-graph", async (req, res) => {
         const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
 
         // Calculer aussi les statistiques du jour
+        // On utilise SUM(power_w) / 60 / 1000 pour estimer la consommation en kWh
+        // car chaque mesure est prise chaque minute (power_w * 1min = Wh, / 60 = Wh/min, mais 1 mesure/min)
         const statsSql = `
             SELECT
                 mp.id AS point_id,
@@ -239,7 +241,8 @@ app.get("/api/history-graph", async (req, res) => {
                 AVG(m.power_w) AS avg_power,
                 MAX(m.power_w) AS max_power,
                 MIN(m.import_kwh_total) AS import_start,
-                MAX(m.import_kwh_total) AS import_end
+                MAX(m.import_kwh_total) AS import_end,
+                SUM(m.power_w) / 60.0 / 1000.0 AS estimated_import_kwh
             FROM measurement m
             JOIN measurement_point mp ON m.point_id = mp.id
             WHERE m.ts >= $1
@@ -297,9 +300,22 @@ app.get("/api/history-graph", async (req, res) => {
         let totalProduction = 0;
 
         const pointStats = statsResult.rows.map(row => {
-            const importKwh = row.import_end && row.import_start 
-                ? parseFloat(row.import_end) - parseFloat(row.import_start)
-                : 0;
+            // Calculer import_kwh : utiliser la différence de compteur si disponible,
+            // sinon utiliser l'estimation basée sur la puissance
+            let importKwh = 0;
+            if (row.import_end && row.import_start) {
+                const diff = parseFloat(row.import_end) - parseFloat(row.import_start);
+                // Si la différence est significative, l'utiliser
+                if (diff > 0.001) {
+                    importKwh = diff;
+                } else {
+                    // Sinon utiliser l'estimation
+                    importKwh = parseFloat(row.estimated_import_kwh || 0);
+                }
+            } else {
+                // Pas de compteur, utiliser l'estimation
+                importKwh = parseFloat(row.estimated_import_kwh || 0);
+            }
             
             const exportKwh = exportsByPointId[row.point_id] || 0;
 
@@ -313,6 +329,7 @@ app.get("/api/history-graph", async (req, res) => {
             return {
                 point_id: row.point_id,
                 point_name: row.point_name,
+                measurement_count: parseInt(row.measurement_count || 0),
                 import_kwh: importKwh,
                 export_kwh: exportKwh,
                 avg_power: parseFloat(row.avg_power || 0),
@@ -575,6 +592,38 @@ app.post("/api/measurements", async (req, res) => {
         res.status(500).json({ ok: false, error: err.message });
     } finally {
         client.release();
+    }
+});
+
+/**
+ * Route pour obtenir les informations Tempo EDF
+ * GET /api/tempo
+ * 
+ * Retourne :
+ * - Couleur du jour et de demain
+ * - Heure creuse/pleine actuelle
+ * - Jours restants par couleur
+ */
+app.get("/api/tempo", async (req, res) => {
+    try {
+        const client = await pool.connect();
+        let contractRow = null;
+        
+        try {
+            contractRow = await getActiveContract(client);
+        } finally {
+            client.release();
+        }
+
+        const tempoInfo = await getTempoInfo(contractRow);
+        
+        res.json({
+            ok: true,
+            ...tempoInfo,
+        });
+    } catch (err) {
+        console.error("[API] Error in /api/tempo:", err);
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 

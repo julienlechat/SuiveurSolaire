@@ -28,6 +28,9 @@ ChartJS.register(
  * Design élégant avec courbes lisses et gradients
  */
 export default function PowerChart({ measurements = [], colorPalette = [] }) {
+    // Debug
+    console.log("[PowerChart] Received measurements:", measurements.length);
+
     // Créer les 24 heures de la journée (0h à 23h)
     const hours24 = Array.from({ length: 24 }, (_, i) => i);
     const labels = hours24.map(h => `${String(h).padStart(2, '0')}h`);
@@ -36,24 +39,40 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
     const pointsData = {};
 
     measurements.forEach((m) => {
+        if (!m.point_id || m.power_w === null || m.power_w === undefined) return;
+
         if (!pointsData[m.point_id]) {
             pointsData[m.point_id] = {
-                name: m.point_name,
+                name: m.point_name || `Point ${m.point_id}`,
                 dataByHour: {},
             };
         }
         
-        const date = new Date(m.ts);
-        const hour = date.getHours();
+        // Parser le timestamp correctement
+        let hour;
+        try {
+            const date = new Date(m.ts);
+            if (isNaN(date.getTime())) {
+                console.warn("[PowerChart] Invalid timestamp:", m.ts);
+                return;
+            }
+            hour = date.getHours();
+        } catch (e) {
+            console.warn("[PowerChart] Error parsing timestamp:", m.ts, e);
+            return;
+        }
         
         if (!pointsData[m.point_id].dataByHour[hour]) {
             pointsData[m.point_id].dataByHour[hour] = [];
         }
         
-        pointsData[m.point_id].dataByHour[hour].push(m.power_w || 0);
+        pointsData[m.point_id].dataByHour[hour].push(parseFloat(m.power_w) || 0);
     });
 
-    // Palette de couleurs avec transparence pour les gradients
+    // Debug
+    console.log("[PowerChart] Points data:", Object.keys(pointsData).length, "points");
+
+    // Palette de couleurs
     const defaultColors = [
         "#3b82f6", // Bleu
         "#ef4444", // Rouge
@@ -77,7 +96,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     return null;
                 }
                 const avg = valuesForHour.reduce((sum, v) => sum + v, 0) / valuesForHour.length;
-                return avg;
+                return Math.round(avg * 10) / 10; // Arrondir à 1 décimale
             });
 
             return {
@@ -98,7 +117,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         }
     );
 
-    const data = {
+    const chartData = {
         labels,
         datasets,
     };
@@ -143,9 +162,13 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                         return `${context[0].label}`;
                     },
                     label: function (context) {
-                        let label = context.dataset.label || "";
+                        const label = context.dataset.label || "";
                         if (context.parsed.y !== null) {
-                            return `${label}: ${context.parsed.y.toFixed(0)} W`;
+                            const value = context.parsed.y;
+                            if (value >= 1000) {
+                                return `${label}: ${(value / 1000).toFixed(2)} kW`;
+                            }
+                            return `${label}: ${value.toFixed(0)} W`;
                         }
                         return `${label}: —`;
                     },
@@ -199,7 +222,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
     };
 
     // Afficher un message si aucune donnée
-    if (measurements.length === 0) {
+    if (measurements.length === 0 || datasets.length === 0) {
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -215,5 +238,5 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         );
     }
 
-    return <Line data={data} options={options} />;
+    return <Line data={chartData} options={options} />;
 }

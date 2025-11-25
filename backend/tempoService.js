@@ -122,6 +122,115 @@ async function getHourTypeForContract(contractRow, referenceDate = new Date()) {
     return null;
 }
 
+/**
+ * Récupère les infos Tempo complètes :
+ * - Couleur aujourd'hui et demain
+ * - Jours restants par couleur
+ * - Heure creuse/pleine actuelle
+ */
+async function getTempoInfo(contractRow = null) {
+    const now = new Date();
+    const timezone = contractRow?.hp_timezone || DEFAULT_TIMEZONE;
+    const hpStart = parseTimeToMinutes(contractRow?.hp_start);
+    const hpEnd = parseTimeToMinutes(contractRow?.hp_end);
+    const localMinutes = getLocalMinutes(now, timezone);
+    const isPeak = isPeakMinute(localMinutes, hpStart, hpEnd);
+
+    let todayColor = null;
+    let tomorrowColor = null;
+    let remainingDays = { bleu: null, blanc: null, rouge: null };
+
+    try {
+        // Couleur aujourd'hui
+        const todayRes = await fetch(`${TEMPO_API_BASE}/jourTempo/today`);
+        if (todayRes.ok) {
+            const todayData = await todayRes.json();
+            todayColor = normalizeColor(todayData?.codeJour) || 
+                         normalizeColor(todayData?.couleur) ||
+                         normalizeColor(todayData?.couleurJour);
+        }
+    } catch (e) {
+        console.error("[TempoService] Error fetching today color:", e);
+    }
+
+    try {
+        // Couleur demain
+        const tomorrowRes = await fetch(`${TEMPO_API_BASE}/jourTempo/tomorrow`);
+        if (tomorrowRes.ok) {
+            const tomorrowData = await tomorrowRes.json();
+            tomorrowColor = normalizeColor(tomorrowData?.codeJour) ||
+                           normalizeColor(tomorrowData?.couleur) ||
+                           normalizeColor(tomorrowData?.couleurJour);
+        }
+    } catch (e) {
+        console.error("[TempoService] Error fetching tomorrow color:", e);
+    }
+
+    try {
+        // Jours restants
+        const currentYear = now.getFullYear();
+        // L'année Tempo va du 1er septembre au 31 août
+        const tempoYear = now.getMonth() >= 8 ? currentYear : currentYear - 1;
+        
+        const remainingRes = await fetch(`${TEMPO_API_BASE}/joursTempo/periode/${tempoYear}-09-01/${tempoYear + 1}-08-31`);
+        if (remainingRes.ok) {
+            const allDays = await remainingRes.json();
+            if (Array.isArray(allDays)) {
+                // Compter les jours par couleur
+                let bleuTotal = 0, blancTotal = 0, rougeTotal = 0;
+                let bleuUsed = 0, blancUsed = 0, rougeUsed = 0;
+                
+                const todayStr = now.toISOString().split('T')[0];
+                
+                allDays.forEach(day => {
+                    const color = normalizeColor(day.codeJour) || normalizeColor(day.couleur);
+                    const dayDate = day.dateJour || day.date;
+                    const isPast = dayDate < todayStr;
+                    
+                    if (color === 'BLEU') {
+                        bleuTotal++;
+                        if (isPast) bleuUsed++;
+                    } else if (color === 'BLANC') {
+                        blancTotal++;
+                        if (isPast) blancUsed++;
+                    } else if (color === 'ROUGE') {
+                        rougeTotal++;
+                        if (isPast) rougeUsed++;
+                    }
+                });
+
+                // Quotas Tempo: 300 bleu, 43 blanc, 22 rouge
+                remainingDays = {
+                    bleu: Math.max(0, 300 - bleuUsed),
+                    blanc: Math.max(0, 43 - blancUsed),
+                    rouge: Math.max(0, 22 - rougeUsed),
+                    bleuUsed,
+                    blancUsed,
+                    rougeUsed,
+                };
+            }
+        }
+    } catch (e) {
+        console.error("[TempoService] Error fetching remaining days:", e);
+    }
+
+    // Heures HP/HC pour l'affichage
+    const hpStartStr = contractRow?.hp_start || "06:00";
+    const hpEndStr = contractRow?.hp_end || "22:00";
+
+    return {
+        contractType: contractRow?.contract_type || null,
+        todayColor,
+        tomorrowColor,
+        isPeakHour: isPeak,
+        peakHourStart: hpStartStr,
+        peakHourEnd: hpEndStr,
+        remainingDays,
+        timestamp: now.toISOString(),
+    };
+}
+
 module.exports = {
     getHourTypeForContract,
+    getTempoInfo,
 };
