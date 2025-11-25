@@ -25,17 +25,30 @@ ChartJS.register(
 
 /**
  * Graphique d'évolution de la puissance sur 24h
+ * Granularité de 10 minutes (144 points)
  * Design élégant avec courbes lisses et gradients
  */
 export default function PowerChart({ measurements = [], colorPalette = [] }) {
-    // Debug
-    console.log("[PowerChart] Received measurements:", measurements.length);
+    // Intervalle en minutes (10 min = 144 points sur 24h)
+    const INTERVAL_MINUTES = 10;
+    const SLOTS_PER_DAY = (24 * 60) / INTERVAL_MINUTES; // 144
 
-    // Créer les 24 heures de la journée (0h à 23h)
-    const hours24 = Array.from({ length: 24 }, (_, i) => i);
-    const labels = hours24.map(h => `${String(h).padStart(2, '0')}h`);
+    // Créer les slots de 10 minutes pour la journée
+    const timeSlots = Array.from({ length: SLOTS_PER_DAY }, (_, i) => i);
+    
+    // Labels : afficher uniquement les heures pleines pour la lisibilité
+    const labels = timeSlots.map(slot => {
+        const totalMinutes = slot * INTERVAL_MINUTES;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        // Afficher seulement les heures pleines comme label visible
+        if (minutes === 0) {
+            return `${String(hours).padStart(2, '0')}h`;
+        }
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    });
 
-    // Grouper les mesures par point de mesure et par heure
+    // Grouper les mesures par point de mesure et par slot de 10 minutes
     const pointsData = {};
 
     measurements.forEach((m) => {
@@ -44,33 +57,29 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         if (!pointsData[m.point_id]) {
             pointsData[m.point_id] = {
                 name: m.point_name || `Point ${m.point_id}`,
-                dataByHour: {},
+                dataBySlot: {},
             };
         }
         
-        // Parser le timestamp correctement
-        let hour;
+        // Parser le timestamp et calculer le slot
+        let slot;
         try {
             const date = new Date(m.ts);
             if (isNaN(date.getTime())) {
-                console.warn("[PowerChart] Invalid timestamp:", m.ts);
                 return;
             }
-            hour = date.getHours();
+            const totalMinutes = date.getHours() * 60 + date.getMinutes();
+            slot = Math.floor(totalMinutes / INTERVAL_MINUTES);
         } catch (e) {
-            console.warn("[PowerChart] Error parsing timestamp:", m.ts, e);
             return;
         }
         
-        if (!pointsData[m.point_id].dataByHour[hour]) {
-            pointsData[m.point_id].dataByHour[hour] = [];
+        if (!pointsData[m.point_id].dataBySlot[slot]) {
+            pointsData[m.point_id].dataBySlot[slot] = [];
         }
         
-        pointsData[m.point_id].dataByHour[hour].push(parseFloat(m.power_w) || 0);
+        pointsData[m.point_id].dataBySlot[slot].push(parseFloat(m.power_w) || 0);
     });
-
-    // Debug
-    console.log("[PowerChart] Points data:", Object.keys(pointsData).length, "points");
 
     // Palette de couleurs
     const defaultColors = [
@@ -89,13 +98,13 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         ([pointId, pointData], index) => {
             const color = colors[index % colors.length];
 
-            // Pour chaque heure (0-23), calculer la moyenne des valeurs disponibles
-            const data = hours24.map((hour) => {
-                const valuesForHour = pointData.dataByHour[hour];
-                if (!valuesForHour || valuesForHour.length === 0) {
+            // Pour chaque slot, calculer la moyenne des valeurs disponibles
+            const data = timeSlots.map((slot) => {
+                const valuesForSlot = pointData.dataBySlot[slot];
+                if (!valuesForSlot || valuesForSlot.length === 0) {
                     return null;
                 }
-                const avg = valuesForHour.reduce((sum, v) => sum + v, 0) / valuesForHour.length;
+                const avg = valuesForSlot.reduce((sum, v) => sum + v, 0) / valuesForSlot.length;
                 return Math.round(avg * 10) / 10; // Arrondir à 1 décimale
             });
 
@@ -103,14 +112,14 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 label: pointData.name,
                 data: data,
                 borderColor: color,
-                backgroundColor: `${color}20`,
-                borderWidth: 2.5,
+                backgroundColor: `${color}15`,
+                borderWidth: 2,
                 pointRadius: 0,
-                pointHoverRadius: 5,
+                pointHoverRadius: 4,
                 pointHoverBorderWidth: 2,
                 pointHoverBackgroundColor: "#fff",
                 pointHoverBorderColor: color,
-                tension: 0.4,
+                tension: 0.3, // Un peu moins de tension pour plus de fidélité
                 fill: true,
                 spanGaps: true,
             };
@@ -159,7 +168,12 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 bodySpacing: 6,
                 callbacks: {
                     title: function(context) {
-                        return `${context[0].label}`;
+                        // Afficher l'heure complète (HH:MM)
+                        const label = context[0].label;
+                        if (label.endsWith('h')) {
+                            return label.replace('h', ':00');
+                        }
+                        return label;
                     },
                     label: function (context) {
                         const label = context.dataset.label || "";
@@ -186,9 +200,18 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                         size: 11,
                     },
                     color: "#94a3b8",
+                    autoSkip: false,
                     callback: function(value, index) {
-                        // Afficher seulement certaines heures pour éviter l'encombrement
-                        return index % 3 === 0 ? this.getLabelForValue(value) : '';
+                        // Afficher seulement les heures pleines (toutes les 6 slots = 1h)
+                        // Et seulement toutes les 2h pour éviter l'encombrement
+                        if (index % 12 === 0) { // 12 slots = 2 heures
+                            const label = this.getLabelForValue(value);
+                            // Retourner seulement si c'est une heure pleine (format XXh)
+                            if (label && label.endsWith('h')) {
+                                return label;
+                            }
+                        }
+                        return '';
                     }
                 },
                 border: {
