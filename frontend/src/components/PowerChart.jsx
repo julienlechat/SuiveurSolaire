@@ -193,13 +193,19 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     },
                     color: "#94a3b8",
                     autoSkip: false,
-                    callback: function(value, index) {
-                        // 15 min = 4 slots par heure
-                        // Afficher toutes les 2h = 8 slots
-                        // index 0 = 00:00, index 8 = 02:00, etc.
-                        if (index % 8 === 0) {
-                            const hours = Math.floor((index * 15) / 60);
-                            return `${String(hours).padStart(2, '0')}h`;
+                    callback: function(value) {
+                        // Récupérer le label (format HH:MM)
+                        const label = this.getLabelForValue(value);
+                        if (!label) return '';
+                        
+                        // Extraire heure et minute
+                        const parts = label.split(':');
+                        const hour = parseInt(parts[0], 10);
+                        const minute = parseInt(parts[1], 10);
+                        
+                        // Afficher seulement les heures paires (00h, 02h, 04h...)
+                        if (minute === 0 && hour % 2 === 0) {
+                            return `${String(hour).padStart(2, '0')}h`;
                         }
                         return '';
                     }
