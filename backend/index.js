@@ -193,21 +193,35 @@ app.get("/api/history-graph", async (req, res) => {
     try {
         const { date } = req.query;
         
-        // Si pas de date fournie, utiliser aujourd'hui
-        const targetDate = date ? new Date(date) : new Date();
-        if (Number.isNaN(targetDate.getTime())) {
+        // Fonction pour obtenir le décalage horaire de Paris (gère été/hiver)
+        const getParisOffset = (d) => {
+            // Créer une date dans le fuseau Europe/Paris
+            const parisTime = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+            const utcTime = new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }));
+            return (parisTime - utcTime) / (60 * 60 * 1000); // Offset en heures
+        };
+        
+        // Date cible
+        const dateStr = date || new Date().toISOString().split('T')[0];
+        
+        // Vérifier le format de date
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
             return res.status(400).json({
                 ok: false,
-                error: "Invalid date format",
+                error: "Invalid date format. Use YYYY-MM-DD",
             });
         }
 
-        // Début et fin de la journée
-        const startOfDay = new Date(targetDate);
-        startOfDay.setHours(0, 0, 0, 0);
+        // Calculer le décalage horaire pour cette date (UTC+1 hiver, UTC+2 été)
+        const tempDate = new Date(dateStr + "T12:00:00Z");
+        const offset = getParisOffset(tempDate);
+        const offsetStr = offset >= 0 ? `+${String(offset).padStart(2, '0')}:00` : `-${String(Math.abs(offset)).padStart(2, '0')}:00`;
         
-        const endOfDay = new Date(targetDate);
-        endOfDay.setHours(23, 59, 59, 999);
+        // Début et fin de la journée EN HEURE DE PARIS
+        const startOfDay = new Date(dateStr + "T00:00:00" + offsetStr);
+        const endOfDay = new Date(dateStr + "T23:59:59.999" + offsetStr);
+        
+        const targetDate = new Date(dateStr);
 
         // Requête pour récupérer toutes les mesures de la journée, groupées par timestamp
         const sql = `
