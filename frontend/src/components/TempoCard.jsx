@@ -89,15 +89,15 @@ export default function TempoCard({ tempoData, loading }) {
     const tomorrowStyle = getTomorrowStyle(tomorrowColor);
 
     return (
-        <div className={`${theme.cardBg} ${theme.border} border rounded-xl shadow-sm p-4 h-full flex flex-col`}>
+        <div className={`${theme.cardBg} ${theme.border} border rounded-xl shadow-sm p-3 h-full flex flex-col`}>
             {/* En-tête avec titre et badge HP/HC bien visible */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${theme.dotColor}`}></div>
                     <span className={`font-semibold text-sm ${theme.textPrimary}`}>Tempo EDF</span>
                 </div>
                 {/* Badge HP/HC TRÈS VISIBLE */}
-                <div className={`px-3 py-1.5 rounded-lg font-bold text-sm ${
+                <div className={`px-3 py-1 rounded-lg font-bold text-xs ${
                     isPeakHour 
                         ? 'bg-red-500 text-white' 
                         : 'bg-emerald-500 text-white'
@@ -107,47 +107,42 @@ export default function TempoCard({ tempoData, loading }) {
             </div>
 
             {/* Couleur du jour - BIEN VISIBLE */}
-            <div className={`${theme.accentBg} rounded-lg p-3 mb-3`}>
+            <div className={`${theme.accentBg} rounded-lg p-2.5 mb-2`}>
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className={`text-[10px] uppercase tracking-wide ${theme.textSecondary} mb-1`}>Aujourd'hui</p>
-                        <p className={`text-2xl font-black ${theme.textPrimary}`}>{theme.label}</p>
+                        <p className={`text-[10px] uppercase tracking-wide ${theme.textSecondary} mb-0.5`}>Aujourd'hui</p>
+                        <p className={`text-xl font-black ${theme.textPrimary}`}>{theme.label}</p>
                     </div>
                     {/* DEMAIN - Plus grand et visible */}
                     <div className="text-right">
-                        <p className={`text-[10px] uppercase tracking-wide ${theme.textSecondary} mb-1`}>Demain</p>
+                        <p className={`text-[10px] uppercase tracking-wide ${theme.textSecondary} mb-0.5`}>Demain</p>
                         {tomorrowColor ? (
-                            <div className={`${tomorrowStyle.bg} ${tomorrowStyle.text} px-3 py-1.5 rounded-lg font-bold text-sm inline-block`}>
+                            <div className={`${tomorrowStyle.bg} ${tomorrowStyle.text} px-2.5 py-1 rounded-lg font-bold text-xs inline-block`}>
                                 {tomorrowStyle.label}
                             </div>
                         ) : (
-                            <span className={`text-sm ${theme.textSecondary}`}>En attente</span>
+                            <span className={`text-sm ${theme.textSecondary}`}>—</span>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Horaires HP/HC */}
-            <div className={`text-center text-xs ${theme.textSecondary} mb-3`}>
-                HP : {peakHourStart || '06:00'} → {peakHourEnd || '22:00'}
-            </div>
-
             {/* Jours restants */}
             {remainingDays && (remainingDays.bleu !== null || remainingDays.blanc !== null || remainingDays.rouge !== null) && (
                 <div className="mt-auto">
-                    <p className={`text-[10px] ${theme.textSecondary} mb-2 text-center uppercase tracking-wide`}>Jours restants</p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                        <div className="bg-sky-100 border border-sky-200 rounded-lg p-1.5 text-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-sky-500 mx-auto mb-0.5"></div>
-                            <span className="text-xs font-bold text-sky-800">{remainingDays.bleu ?? '—'}</span>
+                    <p className={`text-[10px] ${theme.textSecondary} mb-1.5 text-center uppercase tracking-wide`}>Jours restants</p>
+                    <div className="grid grid-cols-3 gap-1">
+                        <div className="bg-sky-100 border border-sky-200 rounded p-1 text-center">
+                            <div className="w-2 h-2 rounded-full bg-sky-500 mx-auto mb-0.5"></div>
+                            <span className="text-[11px] font-bold text-sky-800">{remainingDays.bleu ?? '—'}</span>
                         </div>
-                        <div className="bg-slate-100 border border-slate-200 rounded-lg p-1.5 text-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-slate-400 mx-auto mb-0.5"></div>
-                            <span className="text-xs font-bold text-slate-700">{remainingDays.blanc ?? '—'}</span>
+                        <div className="bg-slate-100 border border-slate-200 rounded p-1 text-center">
+                            <div className="w-2 h-2 rounded-full bg-slate-400 mx-auto mb-0.5"></div>
+                            <span className="text-[11px] font-bold text-slate-700">{remainingDays.blanc ?? '—'}</span>
                         </div>
-                        <div className="bg-rose-100 border border-rose-200 rounded-lg p-1.5 text-center">
-                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500 mx-auto mb-0.5"></div>
-                            <span className="text-xs font-bold text-rose-800">{remainingDays.rouge ?? '—'}</span>
+                        <div className="bg-rose-100 border border-rose-200 rounded p-1 text-center">
+                            <div className="w-2 h-2 rounded-full bg-rose-500 mx-auto mb-0.5"></div>
+                            <span className="text-[11px] font-bold text-rose-800">{remainingDays.rouge ?? '—'}</span>
                         </div>
                     </div>
                 </div>

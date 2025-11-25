@@ -183,9 +183,13 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         },
         scales: {
             x: {
+                type: 'category',
                 grid: {
                     display: false,
                 },
+                offset: false,
+                min: 0,
+                max: 95,
                 ticks: {
                     maxRotation: 0,
                     font: {
@@ -193,18 +197,12 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     },
                     color: "#94a3b8",
                     autoSkip: false,
-                    callback: function(value) {
-                        // Récupérer le label (format HH:MM)
-                        const label = this.getLabelForValue(value);
-                        if (!label) return '';
-                        
-                        // Extraire heure et minute
-                        const parts = label.split(':');
-                        const hour = parseInt(parts[0], 10);
-                        const minute = parseInt(parts[1], 10);
-                        
-                        // Afficher seulement les heures paires (00h, 02h, 04h...)
-                        if (minute === 0 && hour % 2 === 0) {
+                    callback: function(value, index) {
+                        // index 0 = 00:00, chaque index = +15 min
+                        // Afficher toutes les 2h = tous les 8 index
+                        // 0 → 00h, 8 → 02h, 16 → 04h, etc.
+                        if (index % 8 === 0) {
+                            const hour = Math.floor((index * 15) / 60);
                             return `${String(hour).padStart(2, '0')}h`;
                         }
                         return '';
