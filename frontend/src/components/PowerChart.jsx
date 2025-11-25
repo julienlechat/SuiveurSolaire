@@ -25,26 +25,22 @@ ChartJS.register(
 
 /**
  * Graphique d'évolution de la puissance sur 24h
- * Granularité de 10 minutes (144 points)
+ * Granularité de 15 minutes (96 points)
  * Design élégant avec courbes lisses et gradients
  */
 export default function PowerChart({ measurements = [], colorPalette = [] }) {
-    // Intervalle en minutes (10 min = 144 points sur 24h)
-    const INTERVAL_MINUTES = 10;
-    const SLOTS_PER_DAY = (24 * 60) / INTERVAL_MINUTES; // 144
+    // Intervalle en minutes (15 min = 96 points sur 24h)
+    const INTERVAL_MINUTES = 15;
+    const SLOTS_PER_DAY = (24 * 60) / INTERVAL_MINUTES; // 96
 
-    // Créer les slots de 10 minutes pour la journée
+    // Créer les slots de 15 minutes pour la journée
     const timeSlots = Array.from({ length: SLOTS_PER_DAY }, (_, i) => i);
     
-    // Labels : afficher uniquement les heures pleines pour la lisibilité
+    // Labels : format HH:MM pour tous les slots
     const labels = timeSlots.map(slot => {
         const totalMinutes = slot * INTERVAL_MINUTES;
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
-        // Afficher seulement les heures pleines comme label visible
-        if (minutes === 0) {
-            return `${String(hours).padStart(2, '0')}h`;
-        }
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     });
 
@@ -169,11 +165,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 callbacks: {
                     title: function(context) {
                         // Afficher l'heure complète (HH:MM)
-                        const label = context[0].label;
-                        if (label.endsWith('h')) {
-                            return label.replace('h', ':00');
-                        }
-                        return label;
+                        return context[0].label;
                     },
                     label: function (context) {
                         const label = context.dataset.label || "";
@@ -202,14 +194,12 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     color: "#94a3b8",
                     autoSkip: false,
                     callback: function(value, index) {
-                        // Afficher seulement les heures pleines (toutes les 6 slots = 1h)
-                        // Et seulement toutes les 2h pour éviter l'encombrement
-                        if (index % 12 === 0) { // 12 slots = 2 heures
-                            const label = this.getLabelForValue(value);
-                            // Retourner seulement si c'est une heure pleine (format XXh)
-                            if (label && label.endsWith('h')) {
-                                return label;
-                            }
+                        // 15 min = 4 slots par heure
+                        // Afficher toutes les 2h = 8 slots
+                        // index 0 = 00:00, index 8 = 02:00, etc.
+                        if (index % 8 === 0) {
+                            const hours = Math.floor((index * 15) / 60);
+                            return `${String(hours).padStart(2, '0')}h`;
                         }
                         return '';
                     }
