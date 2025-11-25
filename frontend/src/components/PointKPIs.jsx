@@ -67,19 +67,27 @@ export default function PointKPIs({ pointStats = [], currentPoints = [], colorPa
                             </div>
                         </div>
 
-                        {/* Consommation ou Production du jour */}
-                        <div className={point.is_production ? "bg-yellow-50 rounded p-3" : "bg-purple-50 rounded p-3"}>
-                            <div className={`text-xs font-medium mb-1 ${point.is_production ? "text-yellow-700" : "text-purple-700"}`}>
-                                {point.is_production ? "PRODUIT" : "CONSOMMÉ"}
+                        {/* Import (Consommation) */}
+                        <div className="bg-red-50 rounded p-3">
+                            <div className="text-xs text-red-700 font-medium mb-1">
+                                IMPORT
                             </div>
-                            <div className={`text-xl font-bold ${point.is_production ? "text-yellow-900" : "text-purple-900"}`}>
-                                {formatNumber(
-                                    point.is_production 
-                                        ? point.production_kwh 
-                                        : point.consumption_kwh, 
-                                    2
-                                )}
-                                <span className={`text-sm font-normal ml-1 ${point.is_production ? "text-yellow-700" : "text-purple-700"}`}>
+                            <div className="text-xl font-bold text-red-900">
+                                {formatNumber(point.import_kwh, 2)}
+                                <span className="text-sm font-normal text-red-700 ml-1">
+                                    kWh
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Export (Production) */}
+                        <div className="bg-yellow-50 rounded p-3">
+                            <div className="text-xs text-yellow-700 font-medium mb-1">
+                                EXPORT
+                            </div>
+                            <div className="text-xl font-bold text-yellow-900">
+                                {formatNumber(point.export_kwh, 2)}
+                                <span className="text-sm font-normal text-yellow-700 ml-1">
                                     kWh
                                 </span>
                             </div>
@@ -93,19 +101,6 @@ export default function PointKPIs({ pointStats = [], currentPoints = [], colorPa
                             <div className="text-xl font-bold text-green-900">
                                 {formatNumber(point.avg_power, 0)}
                                 <span className="text-sm font-normal text-green-700 ml-1">
-                                    W
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Pic */}
-                        <div className="bg-orange-50 rounded p-3">
-                            <div className="text-xs text-orange-700 font-medium mb-1">
-                                PIC
-                            </div>
-                            <div className="text-xl font-bold text-orange-900">
-                                {formatNumber(point.max_power, 0)}
-                                <span className="text-sm font-normal text-orange-700 ml-1">
                                     W
                                 </span>
                             </div>

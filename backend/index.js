@@ -270,16 +270,6 @@ app.get("/api/history-graph", async (req, res) => {
         let totalAvgPower = 0;
         let pointCount = 0;
 
-        // Helper function to detect production points (solar panels)
-        const isProductionPoint = (name) => {
-            const lowerName = name.toLowerCase();
-            return lowerName.includes('pv') || 
-                   lowerName.includes('solar') || 
-                   lowerName.includes('solaire') ||
-                   lowerName.includes('production') ||
-                   lowerName.includes('photovoltaique');
-        };
-
         // Calculer aussi les exports pour chaque point
         const exportSql = `
             SELECT
@@ -307,19 +297,15 @@ app.get("/api/history-graph", async (req, res) => {
         let totalProduction = 0;
 
         const pointStats = statsResult.rows.map(row => {
-            const consumption = row.import_end && row.import_start 
+            const importKwh = row.import_end && row.import_start 
                 ? parseFloat(row.import_end) - parseFloat(row.import_start)
                 : 0;
             
-            const production = exportsByPointId[row.point_id] || 0;
-            const isProduction = isProductionPoint(row.point_name);
+            const exportKwh = exportsByPointId[row.point_id] || 0;
 
-            // Si c'est un point de production, on compte la production
-            if (isProduction) {
-                totalProduction += production;
-            } else {
-                totalConsumption += consumption;
-            }
+            // Sommes globales
+            totalConsumption += importKwh;
+            totalProduction += exportKwh;
 
             totalAvgPower += parseFloat(row.avg_power || 0);
             pointCount++;
@@ -327,9 +313,8 @@ app.get("/api/history-graph", async (req, res) => {
             return {
                 point_id: row.point_id,
                 point_name: row.point_name,
-                is_production: isProduction,
-                consumption_kwh: consumption,
-                production_kwh: production,
+                import_kwh: importKwh,
+                export_kwh: exportKwh,
                 avg_power: parseFloat(row.avg_power || 0),
                 max_power: parseFloat(row.max_power || 0),
             };

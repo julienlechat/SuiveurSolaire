@@ -1,6 +1,6 @@
 /**
  * Statistiques du jour pour un suiveur d'énergie
- * Focus : Consommation totale, Coût, Moyenne, Pic
+ * Style moderne avec icônes colorées
  */
 export default function DailyStats({ stats }) {
     const formatNumber = (value, decimals = 2) => {
@@ -21,164 +21,117 @@ export default function DailyStats({ stats }) {
 
     const hasProduction = stats?.totalProduction > 0;
 
+    // Composant Card réutilisable
+    const StatCard = ({ icon, iconBg, iconColor, title, value, unit, subtitle, trend }) => (
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center`}>
+                            <div className={iconColor}>
+                                {icon}
+                            </div>
+                        </div>
+                        <span className="text-sm font-medium text-gray-600">{title}</span>
+                    </div>
+                    <div className="ml-0">
+                        <div className="text-2xl font-bold text-gray-900">
+                            {value}
+                            <span className="text-base font-normal text-gray-500 ml-1">{unit}</span>
+                        </div>
+                        {subtitle && (
+                            <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
+                        )}
+                        {trend && (
+                            <div className={`text-xs mt-1 flex items-center gap-1 ${trend.positive ? 'text-green-600' : 'text-gray-500'}`}>
+                                {trend.text}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className={`grid grid-cols-1 md:grid-cols-2 ${hasProduction ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4`}>
             {/* Consommation totale */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-blue-600"
-                    >
-                        <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
-                        <path
-                            fillRule="evenodd"
-                            d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z"
-                            clipRule="evenodd"
-                        />
+            <StatCard
+                icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v.258a33.186 33.186 0 0 1 6.668.83.75.75 0 0 1-.336 1.461 31.28 31.28 0 0 0-1.103-.232l1.702 7.545a.75.75 0 0 1-.387.832A4.981 4.981 0 0 1 15 13.75a4.982 4.982 0 0 1-1.294-.172.75.75 0 0 1-.387-.832l1.702-7.545a31.28 31.28 0 0 0-10.042 0l1.702 7.545a.75.75 0 0 1-.387.832A4.98 4.98 0 0 1 5 13.75a4.98 4.98 0 0 1-1.294-.172.75.75 0 0 1-.387-.832l1.702-7.545a31.28 31.28 0 0 0-1.103.232.75.75 0 0 1-.336-1.462 33.186 33.186 0 0 1 6.668-.829V2.75A.75.75 0 0 1 10 2ZM5 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 5 15Zm5 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15Zm5 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 15 15Z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-xs font-medium text-blue-700 uppercase">
-                        Consommation
-                    </span>
-                </div>
-                <div className="text-3xl font-bold text-blue-900">
-                    {formatNumber(stats?.totalConsumption || 0, 2)}
-                    <span className="text-lg font-normal text-blue-700 ml-1">
-                        kWh
-                    </span>
-                </div>
-                <div className="text-xs text-blue-600 mt-1">
-                    Total du jour
-                </div>
-            </div>
+                }
+                iconBg="bg-blue-100"
+                iconColor="text-blue-600"
+                title="Consommation"
+                value={formatNumber(stats?.totalConsumption || 0, 2)}
+                unit="kWh"
+                subtitle="Total importé"
+            />
 
             {/* Coût estimé */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-purple-600"
-                    >
-                        <path d="M10.464 8.746c.227-.18.497-.311.786-.394v2.795a2.252 2.252 0 0 1-.786-.393c-.394-.313-.546-.681-.546-1.004 0-.323.152-.691.546-1.004ZM12.75 15.662v-2.824c.347.085.664.228.921.421.427.32.579.686.579.991 0 .305-.152.671-.579.991a2.534 2.534 0 0 1-.921.42Z" />
-                        <path
-                            fillRule="evenodd"
-                            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v.816a3.836 3.836 0 0 0-1.72.756c-.712.566-1.112 1.35-1.112 2.178 0 .829.4 1.612 1.113 2.178.502.4 1.102.647 1.719.756v2.978a2.536 2.536 0 0 1-.921-.421l-.879-.66a.75.75 0 0 0-.9 1.2l.879.66c.533.4 1.169.645 1.821.75V18a.75.75 0 0 0 1.5 0v-.81a4.124 4.124 0 0 0 1.821-.749c.745-.559 1.179-1.344 1.179-2.191 0-.847-.434-1.632-1.179-2.191a4.122 4.122 0 0 0-1.821-.75V8.354c.29.082.559.213.786.393l.415.33a.75.75 0 0 0 .933-1.175l-.415-.33a3.836 3.836 0 0 0-1.719-.755V6Z"
-                            clipRule="evenodd"
-                        />
+            <StatCard
+                icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path d="M10.75 10.818v2.614A3.13 3.13 0 0 0 11.888 13c.482-.315.612-.648.612-.875 0-.227-.13-.56-.612-.875a3.13 3.13 0 0 0-1.138-.432ZM8.33 8.62c.053.055.115.11.184.164.208.16.46.284.736.363V6.603a2.45 2.45 0 0 0-.35.13c-.14.065-.27.143-.386.233-.377.292-.514.627-.514.909 0 .184.058.39.202.592.037.051.08.102.128.152Z" />
+                        <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-6a.75.75 0 0 1 .75.75v.316a3.78 3.78 0 0 1 1.653.713c.426.33.744.74.925 1.2a.75.75 0 0 1-1.395.55 1.35 1.35 0 0 0-.447-.563 2.187 2.187 0 0 0-.736-.363V9.3c.698.093 1.383.32 1.959.696.787.514 1.29 1.27 1.29 2.13 0 .86-.504 1.616-1.29 2.13-.576.377-1.261.603-1.96.696v.299a.75.75 0 1 1-1.5 0v-.3c-.697-.092-1.382-.318-1.958-.695-.482-.315-.857-.717-1.078-1.188a.75.75 0 1 1 1.359-.636c.08.173.245.376.54.569.313.205.706.353 1.138.432v-2.748a3.782 3.782 0 0 1-1.653-.713C6.9 9.433 6.5 8.681 6.5 7.875c0-.805.4-1.558 1.097-2.096a3.78 3.78 0 0 1 1.653-.713V4.75A.75.75 0 0 1 10 4Z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-xs font-medium text-purple-700 uppercase">
-                        Coût estimé
-                    </span>
-                </div>
-                <div className="text-3xl font-bold text-purple-900">
-                    {formatNumber(stats?.estimatedCost || 0, 2)}
-                    <span className="text-lg font-normal text-purple-700 ml-1">
-                        €
-                    </span>
-                </div>
-                <div className="text-xs text-purple-600 mt-1">
-                    À {formatNumber(stats?.pricePerKwh || 0.18, 3)} €/kWh
-                </div>
-            </div>
+                }
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
+                title="Coût"
+                value={formatNumber(stats?.estimatedCost || 0, 2)}
+                unit="€"
+                subtitle={`À ${formatNumber(stats?.pricePerKwh || 0.18, 3)} €/kWh`}
+            />
 
             {/* Puissance moyenne */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-green-600"
-                    >
-                        <path
-                            fillRule="evenodd"
-                            d="M2.25 13.5a8.25 8.25 0 0 1 8.25-8.25.75.75 0 0 1 .75.75v6.75H18a.75.75 0 0 1 .75.75 8.25 8.25 0 0 1-16.5 0Z"
-                            clipRule="evenodd"
-                        />
-                        <path
-                            fillRule="evenodd"
-                            d="M12.75 3a.75.75 0 0 1 .75-.75 8.25 8.25 0 0 1 8.25 8.25.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75V3Z"
-                            clipRule="evenodd"
-                        />
+            <StatCard
+                icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v7.5h7.5a.75.75 0 0 1 0 1.5h-7.5v7.5a.75.75 0 0 1-1.5 0v-7.5h-7.5a.75.75 0 0 1 0-1.5h7.5v-7.5A.75.75 0 0 1 10 2Z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-xs font-medium text-green-700 uppercase">
-                        Moyenne
-                    </span>
-                </div>
-                <div className="text-3xl font-bold text-green-900">
-                    {formatNumber(stats?.averagePower || 0, 0)}
-                    <span className="text-lg font-normal text-green-700 ml-1">
-                        W
-                    </span>
-                </div>
-                <div className="text-xs text-green-600 mt-1">
-                    Puissance moyenne
-                </div>
-            </div>
+                }
+                iconBg="bg-green-100"
+                iconColor="text-green-600"
+                title="Moyenne"
+                value={formatNumber(stats?.averagePower || 0, 0)}
+                unit="W"
+                subtitle="Puissance moyenne"
+            />
 
-            {/* Production solaire (si applicable) */}
+            {/* Production (si applicable) */}
             {hasProduction && (
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center gap-2 mb-2">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            className="w-5 h-5 text-yellow-600"
-                        >
-                            <path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75ZM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18ZM7.758 17.303a.75.75 0 0 0-1.061-1.06l-1.591 1.59a.75.75 0 0 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12ZM6.697 7.757a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 0 0-1.061 1.06l1.59 1.591Z" />
+                <StatCard
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                            <path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM6.464 14.596a.75.75 0 1 0-1.06-1.06l-1.06 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 5 10ZM14.596 15.657a.75.75 0 0 0 1.06-1.06l-1.06-1.061a.75.75 0 1 0-1.06 1.06l1.06 1.06ZM5.404 6.464a.75.75 0 0 0 1.06-1.06l-1.06-1.06a.75.75 0 1 0-1.061 1.06l1.06 1.06Z" />
                         </svg>
-                        <span className="text-xs font-medium text-yellow-700 uppercase">
-                            Production
-                        </span>
-                    </div>
-                    <div className="text-3xl font-bold text-yellow-900">
-                        {formatNumber(stats?.totalProduction || 0, 2)}
-                        <span className="text-lg font-normal text-yellow-700 ml-1">
-                            kWh
-                        </span>
-                    </div>
-                    <div className="text-xs text-yellow-600 mt-1">
-                        Revenu: {formatNumber(stats?.estimatedRevenue || 0, 2)} €
-                    </div>
-                </div>
+                    }
+                    iconBg="bg-yellow-100"
+                    iconColor="text-yellow-600"
+                    title="Production"
+                    value={formatNumber(stats?.totalProduction || 0, 2)}
+                    unit="kWh"
+                    subtitle={`Revenu: ${formatNumber(stats?.estimatedRevenue || 0, 2)} €`}
+                />
             )}
 
             {/* Pic de puissance */}
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                <div className="flex items-center gap-2 mb-2">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-orange-600"
-                    >
-                        <path
-                            fillRule="evenodd"
-                            d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
-                            clipRule="evenodd"
-                        />
+            <StatCard
+                icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path d="M11.983 1.907a.75.75 0 0 0-1.292-.657l-8.5 9.5A.75.75 0 0 0 2.75 12h6.572l-1.305 6.093a.75.75 0 0 0 1.292.657l8.5-9.5A.75.75 0 0 0 17.25 8h-6.572l1.305-6.093Z" />
                     </svg>
-                    <span className="text-xs font-medium text-orange-700 uppercase">
-                        Pic
-                    </span>
-                </div>
-                <div className="text-3xl font-bold text-orange-900">
-                    {formatNumber(stats?.maxPower || 0, 0)}
-                    <span className="text-lg font-normal text-orange-700 ml-1">
-                        W
-                    </span>
-                </div>
-                <div className="text-xs text-orange-600 mt-1">
-                    {stats?.maxPowerTime
-                        ? `À ${formatTime(stats.maxPowerTime)}`
-                        : "—"}
-                </div>
-            </div>
+                }
+                iconBg="bg-orange-100"
+                iconColor="text-orange-600"
+                title="Pic"
+                value={formatNumber(stats?.maxPower || 0, 0)}
+                unit="W"
+                subtitle={stats?.maxPowerTime ? `À ${formatTime(stats.maxPowerTime)}` : "—"}
+            />
         </div>
     );
 }

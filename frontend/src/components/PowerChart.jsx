@@ -27,33 +27,32 @@ ChartJS.register(
 /**
  * Graphique d'évolution de la puissance au fil du temps
  * Affiche 4 courbes (une par point de mesure)
+ * Affiche toujours 24h (0h-23h) pour repérage facile
  */
 export default function PowerChart({ measurements = [], colorPalette = [] }) {
-    // Grouper les mesures par point de mesure
+    // Créer les 24 heures de la journée (0h à 23h)
+    const hours24 = Array.from({ length: 24 }, (_, i) => i);
+    const labels = hours24.map(h => `${String(h).padStart(2, '0')}:00`);
+
+    // Grouper les mesures par point de mesure et par heure
     const pointsData = {};
 
     measurements.forEach((m) => {
         if (!pointsData[m.point_id]) {
             pointsData[m.point_id] = {
                 name: m.point_name,
-                data: [],
-                timestamps: [],
+                dataByHour: {}, // { hour: [values] }
             };
         }
-        pointsData[m.point_id].data.push(m.power_w || 0);
-        pointsData[m.point_id].timestamps.push(new Date(m.ts));
-    });
-
-    // Obtenir tous les timestamps uniques et triés
-    const allTimestamps = [...new Set(measurements.map((m) => m.ts))].sort();
-
-    // Formater les labels (heures)
-    const labels = allTimestamps.map((ts) => {
-        const date = new Date(ts);
-        return date.toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+        
+        const date = new Date(m.ts);
+        const hour = date.getHours();
+        
+        if (!pointsData[m.point_id].dataByHour[hour]) {
+            pointsData[m.point_id].dataByHour[hour] = [];
+        }
+        
+        pointsData[m.point_id].dataByHour[hour].push(m.power_w || 0);
     });
 
     // Palette de couleurs avec gradients
@@ -71,12 +70,15 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         ([pointId, pointData], index) => {
             const colorScheme = gradientColors[index] || gradientColors[0];
 
-            // Créer un array avec toutes les valeurs pour chaque timestamp
-            const data = allTimestamps.map((ts) => {
-                const idx = pointData.timestamps.findIndex(
-                    (t) => t.toISOString() === ts
-                );
-                return idx >= 0 ? pointData.data[idx] : null;
+            // Pour chaque heure (0-23), calculer la moyenne des valeurs disponibles
+            const data = hours24.map((hour) => {
+                const valuesForHour = pointData.dataByHour[hour];
+                if (!valuesForHour || valuesForHour.length === 0) {
+                    return null; // Pas de données pour cette heure
+                }
+                // Moyenne des valeurs de cette heure
+                const avg = valuesForHour.reduce((sum, v) => sum + v, 0) / valuesForHour.length;
+                return avg;
             });
 
             return {
@@ -101,6 +103,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 pointHoverBackgroundColor: "#fff",
                 tension: 0.4,
                 fill: true,
+                spanGaps: true, // Connecter les points même avec des null entre deux
             };
         }
     );
@@ -163,12 +166,16 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 },
                 ticks: {
                     maxRotation: 0,
-                    autoSkip: true,
-                    maxTicksLimit: 12,
+                    autoSkip: false, // Afficher toutes les heures
+                    maxTicksLimit: 24, // 24 heures
                     font: {
                         size: 11,
                     },
                     color: "#6b7280",
+                    callback: function(value, index) {
+                        // Afficher seulement les heures paires pour éviter la surcharge
+                        return index % 2 === 0 ? this.getLabelForValue(value) : '';
+                    }
                 },
                 border: {
                     display: false,
