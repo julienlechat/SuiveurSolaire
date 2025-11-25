@@ -197,9 +197,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 grid: {
                     display: false,
                 },
-                offset: false,
-                min: "00:00",
-                max: "23:45",
+                bounds: "ticks",
                 ticks: {
                     maxRotation: 0,
                     font: {
@@ -208,13 +206,14 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     color: "#94a3b8",
                     autoSkip: false,
                     callback: function (value, index) {
-                        // value = le label (ex: "00:00", "00:15", etc.)
-                        // Afficher seulement les heures paires
-                        if (
-                            typeof value === "string" &&
-                            value.endsWith(":00")
-                        ) {
-                            const hour = parseInt(value.split(":")[0], 10);
+                        // value = index du tick, on doit récupérer le label
+                        const label = this.getLabelForValue(value);
+                        if (!label) return "";
+
+                        // Vérifier si c'est une heure pleine (:00)
+                        if (label.endsWith(":00")) {
+                            const hour = parseInt(label.split(":")[0], 10);
+                            // Afficher seulement les heures paires (00h, 02h, 04h...)
                             if (hour % 2 === 0) {
                                 return `${String(hour).padStart(2, "0")}h`;
                             }
