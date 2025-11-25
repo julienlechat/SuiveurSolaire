@@ -232,7 +232,7 @@ app.get("/api/history-graph", async (req, res) => {
 
         // Calculer aussi les statistiques du jour
         // On utilise SUM(power_w) / 60 / 1000 pour estimer la consommation en kWh
-        // car chaque mesure est prise chaque minute (power_w * 1min = Wh, / 60 = Wh/min, mais 1 mesure/min)
+        // IMPORTANT: Séparer import et export basé sur direction_export
         const statsSql = `
             SELECT
                 mp.id AS point_id,
@@ -242,7 +242,8 @@ app.get("/api/history-graph", async (req, res) => {
                 MAX(m.power_w) AS max_power,
                 MIN(m.import_kwh_total) AS import_start,
                 MAX(m.import_kwh_total) AS import_end,
-                SUM(m.power_w) / 60.0 / 1000.0 AS estimated_import_kwh
+                SUM(CASE WHEN m.direction_export = false OR m.direction_export IS NULL THEN m.power_w ELSE 0 END) / 60.0 / 1000.0 AS estimated_import_kwh,
+                SUM(CASE WHEN m.direction_export = true THEN m.power_w ELSE 0 END) / 60.0 / 1000.0 AS estimated_export_kwh
             FROM measurement m
             JOIN measurement_point mp ON m.point_id = mp.id
             WHERE m.ts >= $1
@@ -301,23 +302,26 @@ app.get("/api/history-graph", async (req, res) => {
 
         const pointStats = statsResult.rows.map(row => {
             // Calculer import_kwh : utiliser la différence de compteur si disponible,
-            // sinon utiliser l'estimation basée sur la puissance
+            // sinon utiliser l'estimation basée sur la puissance (direction_export = false)
             let importKwh = 0;
             if (row.import_end && row.import_start) {
                 const diff = parseFloat(row.import_end) - parseFloat(row.import_start);
-                // Si la différence est significative, l'utiliser
                 if (diff > 0.001) {
                     importKwh = diff;
                 } else {
-                    // Sinon utiliser l'estimation
                     importKwh = parseFloat(row.estimated_import_kwh || 0);
                 }
             } else {
-                // Pas de compteur, utiliser l'estimation
                 importKwh = parseFloat(row.estimated_import_kwh || 0);
             }
             
-            const exportKwh = exportsByPointId[row.point_id] || 0;
+            // Calculer export_kwh : utiliser la différence de compteur si disponible,
+            // sinon utiliser l'estimation basée sur la puissance (direction_export = true)
+            let exportKwh = exportsByPointId[row.point_id] || 0;
+            if (exportKwh < 0.001) {
+                // Pas de compteur export, utiliser l'estimation
+                exportKwh = parseFloat(row.estimated_export_kwh || 0);
+            }
 
             // Sommes globales
             totalConsumption += importKwh;

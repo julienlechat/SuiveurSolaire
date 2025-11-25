@@ -7,7 +7,6 @@ export default function EnergyCard({
     power = 0,
     voltage = null,
     current = null,
-    powerFactor = null,
     frequency = null,
     isExport = false,
     color = "#3b82f6",
@@ -86,24 +85,6 @@ export default function EnergyCard({
                             </div>
                         </div>
                     </div>
-
-                    {/* Facteur de puissance (si disponible) - icône cercle avec indicateur */}
-                    {powerFactor !== null && (
-                        <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-purple-600">
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path d="M12 7v5l3 3" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div className="text-xs text-slate-500">Cos φ</div>
-                                <div className="text-sm font-semibold text-slate-700">
-                                    {formatValue(powerFactor, 2)}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Fréquence (si disponible) - icône onde */}
                     {frequency !== null && (

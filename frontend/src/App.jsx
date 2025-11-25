@@ -285,7 +285,6 @@ function App() {
                                     power={point.power_w}
                                     voltage={point.voltage_v}
                                     current={point.current_a}
-                                    powerFactor={point.power_factor}
                                     frequency={point.frequency_hz}
                                     isExport={point.direction_export}
                                     color={getPointColor(point.point_id)}
