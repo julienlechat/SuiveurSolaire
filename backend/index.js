@@ -320,7 +320,9 @@ app.get("/api/history-graph", async (req, res) => {
             };
         });
 
-        const averagePower = pointCount > 0 ? totalAvgPower / pointCount : 0;
+        // La puissance moyenne est la somme des moyennes de tous les points
+        // (représente la puissance totale moyenne de l'installation)
+        const averagePower = totalAvgPower;
         const pricePerKwh = 0.18; // Prix moyen - pourrait venir de la config
         const sellPricePerKwh = 0.13; // Prix de rachat photovoltaïque
         const estimatedCost = totalConsumption * pricePerKwh;
