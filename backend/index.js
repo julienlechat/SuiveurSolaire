@@ -230,9 +230,9 @@ app.get("/api/history-graph", async (req, res) => {
         
         const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
 
-        // Calculer aussi les statistiques du jour
-        // On utilise SUM(power_w) / 60 / 1000 pour estimer la consommation en kWh
-        // IMPORTANT: Séparer import et export basé sur direction_export
+        // Calculer les statistiques du jour
+        // Les valeurs import_kwh_total et export_kwh_total sont réinitialisées chaque minute
+        // Donc on fait simplement SUM() pour avoir le total du jour
         const statsSql = `
             SELECT
                 mp.id AS point_id,
@@ -240,10 +240,8 @@ app.get("/api/history-graph", async (req, res) => {
                 COUNT(*) AS measurement_count,
                 AVG(m.power_w) AS avg_power,
                 MAX(m.power_w) AS max_power,
-                MIN(m.import_kwh_total) AS import_start,
-                MAX(m.import_kwh_total) AS import_end,
-                SUM(CASE WHEN m.direction_export = false OR m.direction_export IS NULL THEN m.power_w ELSE 0 END) / 60.0 / 1000.0 AS estimated_import_kwh,
-                SUM(CASE WHEN m.direction_export = true THEN m.power_w ELSE 0 END) / 60.0 / 1000.0 AS estimated_export_kwh
+                COALESCE(SUM(m.import_kwh_total), 0) AS import_kwh,
+                COALESCE(SUM(m.export_kwh_total), 0) AS export_kwh
             FROM measurement m
             JOIN measurement_point mp ON m.point_id = mp.id
             WHERE m.ts >= $1
@@ -271,57 +269,13 @@ app.get("/api/history-graph", async (req, res) => {
 
         // Calculer les stats globales
         let totalConsumption = 0;
+        let totalProduction = 0;
         let totalAvgPower = 0;
         let pointCount = 0;
 
-        // Calculer aussi les exports pour chaque point
-        const exportSql = `
-            SELECT
-                mp.id AS point_id,
-                MIN(m.export_kwh_total) AS export_start,
-                MAX(m.export_kwh_total) AS export_end
-            FROM measurement m
-            JOIN measurement_point mp ON m.point_id = mp.id
-            WHERE m.ts >= $1
-              AND m.ts <= $2
-              AND mp.active = true
-            GROUP BY mp.id
-            ORDER BY mp.id
-        `;
-
-        const exportResult = await pool.query(exportSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
-        const exportsByPointId = {};
-        exportResult.rows.forEach(row => {
-            const production = row.export_end && row.export_start
-                ? parseFloat(row.export_end) - parseFloat(row.export_start)
-                : 0;
-            exportsByPointId[row.point_id] = production;
-        });
-
-        let totalProduction = 0;
-
         const pointStats = statsResult.rows.map(row => {
-            // Calculer import_kwh : utiliser la différence de compteur si disponible,
-            // sinon utiliser l'estimation basée sur la puissance (direction_export = false)
-            let importKwh = 0;
-            if (row.import_end && row.import_start) {
-                const diff = parseFloat(row.import_end) - parseFloat(row.import_start);
-                if (diff > 0.001) {
-                    importKwh = diff;
-                } else {
-                    importKwh = parseFloat(row.estimated_import_kwh || 0);
-                }
-            } else {
-                importKwh = parseFloat(row.estimated_import_kwh || 0);
-            }
-            
-            // Calculer export_kwh : utiliser la différence de compteur si disponible,
-            // sinon utiliser l'estimation basée sur la puissance (direction_export = true)
-            let exportKwh = exportsByPointId[row.point_id] || 0;
-            if (exportKwh < 0.001) {
-                // Pas de compteur export, utiliser l'estimation
-                exportKwh = parseFloat(row.estimated_export_kwh || 0);
-            }
+            const importKwh = parseFloat(row.import_kwh || 0);
+            const exportKwh = parseFloat(row.export_kwh || 0);
 
             // Sommes globales
             totalConsumption += importKwh;
