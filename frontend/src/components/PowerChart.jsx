@@ -35,20 +35,24 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
 
     // Créer les slots de 15 minutes pour la journée
     const timeSlots = Array.from({ length: SLOTS_PER_DAY }, (_, i) => i);
-    
+
     // Labels : format HH:MM pour tous les slots
-    const labels = timeSlots.map(slot => {
+    const labels = timeSlots.map((slot) => {
         const totalMinutes = slot * INTERVAL_MINUTES;
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+            2,
+            "0"
+        )}`;
     });
 
     // Grouper les mesures par point de mesure et par slot de 10 minutes
     const pointsData = {};
 
     measurements.forEach((m) => {
-        if (!m.point_id || m.power_w === null || m.power_w === undefined) return;
+        if (!m.point_id || m.power_w === null || m.power_w === undefined)
+            return;
 
         if (!pointsData[m.point_id]) {
             pointsData[m.point_id] = {
@@ -56,7 +60,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 dataBySlot: {},
             };
         }
-        
+
         // Parser le timestamp et calculer le slot
         let slot;
         try {
@@ -69,12 +73,14 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         } catch (e) {
             return;
         }
-        
+
         if (!pointsData[m.point_id].dataBySlot[slot]) {
             pointsData[m.point_id].dataBySlot[slot] = [];
         }
-        
-        pointsData[m.point_id].dataBySlot[slot].push(parseFloat(m.power_w) || 0);
+
+        pointsData[m.point_id].dataBySlot[slot].push(
+            parseFloat(m.power_w) || 0
+        );
     });
 
     // Palette de couleurs
@@ -100,7 +106,9 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 if (!valuesForSlot || valuesForSlot.length === 0) {
                     return null;
                 }
-                const avg = valuesForSlot.reduce((sum, v) => sum + v, 0) / valuesForSlot.length;
+                const avg =
+                    valuesForSlot.reduce((sum, v) => sum + v, 0) /
+                    valuesForSlot.length;
                 return Math.round(avg * 10) / 10; // Arrondir à 1 décimale
             });
 
@@ -163,7 +171,7 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                 },
                 bodySpacing: 6,
                 callbacks: {
-                    title: function(context) {
+                    title: function (context) {
                         // Afficher l'heure complète (HH:MM)
                         return context[0].label;
                     },
@@ -172,7 +180,9 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                         if (context.parsed.y !== null) {
                             const value = context.parsed.y;
                             if (value >= 1000) {
-                                return `${label}: ${(value / 1000).toFixed(2)} kW`;
+                                return `${label}: ${(value / 1000).toFixed(
+                                    2
+                                )} kW`;
                             }
                             return `${label}: ${value.toFixed(0)} W`;
                         }
@@ -183,13 +193,13 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
         },
         scales: {
             x: {
-                type: 'category',
+                type: "category",
                 grid: {
                     display: false,
                 },
                 offset: false,
-                min: 0,
-                max: 95,
+                min: "00:00",
+                max: "23:45",
                 ticks: {
                     maxRotation: 0,
                     font: {
@@ -197,16 +207,20 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
                     },
                     color: "#94a3b8",
                     autoSkip: false,
-                    callback: function(value, index) {
-                        // index 0 = 00:00, chaque index = +15 min
-                        // Afficher toutes les 2h = tous les 8 index
-                        // 0 → 00h, 8 → 02h, 16 → 04h, etc.
-                        if (index % 8 === 0) {
-                            const hour = Math.floor((index * 15) / 60);
-                            return `${String(hour).padStart(2, '0')}h`;
+                    callback: function (value, index) {
+                        // value = le label (ex: "00:00", "00:15", etc.)
+                        // Afficher seulement les heures paires
+                        if (
+                            typeof value === "string" &&
+                            value.endsWith(":00")
+                        ) {
+                            const hour = parseInt(value.split(":")[0], 10);
+                            if (hour % 2 === 0) {
+                                return `${String(hour).padStart(2, "0")}h`;
+                            }
                         }
-                        return '';
-                    }
+                        return "";
+                    },
                 },
                 border: {
                     display: false,
@@ -244,12 +258,27 @@ export default function PowerChart({ measurements = [], colorPalette = [] }) {
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                     <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-slate-400">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-8 h-8 text-slate-400"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+                            />
                         </svg>
                     </div>
-                    <p className="text-slate-500 text-sm">Aucune donnée pour cette période</p>
-                    <p className="text-slate-400 text-xs mt-1">Les mesures apparaîtront ici</p>
+                    <p className="text-slate-500 text-sm">
+                        Aucune donnée pour cette période
+                    </p>
+                    <p className="text-slate-400 text-xs mt-1">
+                        Les mesures apparaîtront ici
+                    </p>
                 </div>
             </div>
         );
