@@ -216,8 +216,8 @@ export default function TempoCard({ tempoData, loading }) {
                     ))}
                 </div>
 
-                {/* Grille des jours */}
-                <div className="grid grid-cols-7 gap-1">
+                {/* Grille des jours - responsive */}
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                     {calendar.weeks.flat().map((day, i) => {
                         if (!day) return <div key={i} />;
 
@@ -253,8 +253,8 @@ export default function TempoCard({ tempoData, loading }) {
                             <div
                                 key={i}
                                 className={`
-                                    w-5 h-5 mx-auto rounded-full flex items-center justify-center
-                                    text-[8px] font-medium
+                                    aspect-square max-w-6 rounded-full flex items-center justify-center
+                                    text-[7px] sm:text-[8px] font-medium
                                     ${bgClass} ${textClass}
                                     ${isToday ? "ring-1 ring-gray-600 ring-offset-1" : ""}
                                 `}

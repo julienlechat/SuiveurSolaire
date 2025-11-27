@@ -2,11 +2,11 @@
 export default function DailyStats({ stats, mainPointStats, currentPower, loading }) {
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+                    <div key={i} className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 animate-pulse">
                         <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
-                        <div className="h-6 bg-slate-200 rounded w-2/3"></div>
+                        <div className="h-5 sm:h-6 bg-slate-200 rounded w-2/3"></div>
                     </div>
                 ))}
             </div>
@@ -98,28 +98,30 @@ export default function DailyStats({ stats, mainPointStats, currentPower, loadin
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4 mb-6">
             {items.map((item, index) => (
                 <div 
                     key={index} 
                     className={`
-                        bg-white rounded-xl border p-4 hover:shadow-md transition-shadow
+                        bg-white rounded-xl border p-3 sm:p-4 hover:shadow-md transition-shadow
                         ${item.highlight ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}
                     `}
                 >
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className={`p-1.5 rounded-lg ${item.bgColor} ${item.color}`}>
-                            {item.icon}
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                        <div className={`p-1 sm:p-1.5 rounded-lg ${item.bgColor} ${item.color}`}>
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {item.icon.props.children}
+                            </svg>
                         </div>
-                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                        <span className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide truncate">
                             {item.label}
                         </span>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                        <span className={`text-2xl font-bold ${item.highlight ? "text-amber-600" : "text-gray-900"}`}>
+                    <div className="flex items-baseline gap-0.5 sm:gap-1">
+                        <span className={`text-xl sm:text-2xl font-bold ${item.highlight ? "text-amber-600" : "text-gray-900"}`}>
                             {item.value}
                         </span>
-                        <span className="text-sm text-gray-500">{item.unit}</span>
+                        <span className="text-xs sm:text-sm text-gray-500">{item.unit}</span>
                     </div>
                 </div>
             ))}
