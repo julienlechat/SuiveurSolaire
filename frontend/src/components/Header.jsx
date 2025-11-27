@@ -1,6 +1,7 @@
-// Header de page - Style original avec fond blanc et bordure
+// Header de page - Style épuré avec icône et description
 export default function Header({ 
     title = "Tableau de bord", 
+    subtitle,
     lastUpdate,
     selectedDate,
     onDateChange 
@@ -24,34 +25,40 @@ export default function Header({
     return (
         <header className="bg-white border-b border-slate-200 px-6 lg:px-8 py-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                {/* Partie gauche : icône + titre */}
-                <div className="flex items-center gap-4">
-                    {/* Icône éclair orange */}
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-200">
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 24 24" 
-                            fill="currentColor" 
-                            className="w-7 h-7 text-white"
-                        >
-                            <path 
-                                fillRule="evenodd" 
-                                d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z" 
-                                clipRule="evenodd" 
-                            />
-                        </svg>
-                    </div>
+                {/* Partie gauche : icône + titre + description */}
+                <div className="flex items-center">
+                    {/* Icône tableau de bord */}
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="24" 
+                        height="24" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        className="h-5 w-5 text-amber-500 mr-3"
+                    >
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
 
-                    {/* Titre et sous-titre */}
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">
+                        <h2 className="text-lg font-semibold text-gray-900">
                             {title}
-                        </h1>
-                        {lastUpdate && (
-                            <p className="text-sm text-slate-400 mt-1">
-                                Mis à jour à {formatTime(lastUpdate)}
-                            </p>
-                        )}
+                        </h2>
+                        <p className="text-sm text-gray-600">
+                            {subtitle || "Suivi en temps réel de votre consommation"}
+                            {lastUpdate && (
+                                <>
+                                    <span className="mx-1">•</span>
+                                    <span>Mis à jour à {formatTime(lastUpdate)}</span>
+                                </>
+                            )}
+                        </p>
                     </div>
                 </div>
 
@@ -63,8 +70,8 @@ export default function Header({
                         className={`
                             px-4 py-2 text-sm font-medium rounded-lg transition-all
                             ${isToday 
-                                ? "bg-slate-900 text-white shadow-md" 
-                                : "text-slate-600 hover:bg-slate-100"
+                                ? "bg-neutral-800 text-white shadow-md" 
+                                : "text-gray-600 hover:bg-gray-100"
                             }
                         `}
                     >
@@ -77,8 +84,8 @@ export default function Header({
                         className={`
                             px-4 py-2 text-sm font-medium rounded-lg transition-all
                             ${isYesterday 
-                                ? "bg-slate-900 text-white shadow-md" 
-                                : "text-slate-600 hover:bg-slate-100"
+                                ? "bg-neutral-800 text-white shadow-md" 
+                                : "text-gray-600 hover:bg-gray-100"
                             }
                         `}
                     >
@@ -92,7 +99,7 @@ export default function Header({
                         max={today}
                         onChange={(e) => onDateChange?.(e.target.value)}
                         className="
-                            px-4 py-2 text-sm border border-slate-200 rounded-lg 
+                            px-4 py-2 text-sm border border-gray-200 rounded-lg 
                             focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent
                             cursor-pointer
                         "
