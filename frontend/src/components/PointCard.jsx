@@ -99,18 +99,20 @@ export default function PointCard({ point, stats }) {
             </div>
 
             {/* Footer - Mesures électriques */}
-            <div className="flex justify-between pt-3 border-t border-gray-100">
-                <div className="text-center">
-                    <span className="text-sm font-medium text-gray-700">{voltage.toFixed(1)}</span>
-                    <span className="text-[10px] text-gray-400 ml-0.5">V</span>
+            <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <div className="flex-1 flex items-center gap-1.5 bg-slate-50 rounded-lg px-2 py-1.5">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-xs font-medium text-gray-700">{voltage.toFixed(0)}</span>
+                    <span className="text-[9px] text-gray-400">V</span>
                 </div>
-                <div className="text-center">
-                    <span className="text-sm font-medium text-gray-700">{current.toFixed(2)}</span>
-                    <span className="text-[10px] text-gray-400 ml-0.5">A</span>
-                </div>
-                <div className="text-center">
-                    <span className="text-[10px] text-gray-400 mr-0.5">PF</span>
-                    <span className="text-sm font-medium text-gray-700">{powerFactor.toFixed(2)}</span>
+                <div className="flex-1 flex items-center gap-1.5 bg-amber-50 rounded-lg px-2 py-1.5">
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span className="text-xs font-medium text-gray-700">{current.toFixed(2)}</span>
+                    <span className="text-[9px] text-gray-400">A</span>
                 </div>
             </div>
         </div>
