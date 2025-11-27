@@ -109,9 +109,7 @@ export default function DailyStats({ stats, mainPointStats, currentPower, loadin
                 >
                     <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                         <div className={`p-1 sm:p-1.5 rounded-lg ${item.bgColor} ${item.color}`}>
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                {item.icon.props.children}
-                            </svg>
+                            {item.icon}
                         </div>
                         <span className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wide truncate">
                             {item.label}

@@ -28,8 +28,9 @@ export default function TempoCard({ tempoData, loading }) {
                         const res = await fetch(`https://www.api-couleur-tempo.fr/api/jourTempo/${dateStr}`);
                         if (res.ok) {
                             const data = await res.json();
-                            if (data?.couleur) {
-                                colors[day] = data.couleur.toUpperCase();
+                            const couleur = data?.libCouleur || data?.couleur;
+                            if (couleur) {
+                                colors[day] = couleur.toUpperCase();
                             }
                         }
                     } catch (e) {
