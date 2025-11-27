@@ -1,76 +1,171 @@
-/**
- * Sidebar inspirée du design Ekonity
- */
-export default function Sidebar({ connectionStatus = 'disconnected' }) {
-    return (
-        <div className="hidden md:flex flex-col h-full py-6 w-72 flex-shrink-0 bg-neutral-800">
-            {/* Logo et titre */}
-            <div className="flex justify-center items-center gap-2 text-white mt-2">
-                <span className="rounded-xl text-yellow-400">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-7 h-7"
-                    >
-                        <path d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM7.5 12a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM18.894 6.166a.75.75 0 0 0-1.06-1.06l-1.591 1.59a.75.75 0 1 0 1.06 1.061l1.591-1.59ZM21.75 12a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1 0-1.5H21a.75.75 0 0 1 .75.75ZM17.834 18.894a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 1 0-1.061 1.06l1.59 1.591ZM12 18a.75.75 0 0 1 .75.75V21a.75.75 0 0 1-1.5 0v-2.25A.75.75 0 0 1 12 18ZM7.758 17.303a.75.75 0 0 0-1.061-1.06l-1.591 1.59a.75.75 0 0 0 1.06 1.061l1.591-1.59ZM6 12a.75.75 0 0 1-.75.75H3a.75.75 0 0 1 0-1.5h2.25A.75.75 0 0 1 6 12ZM6.697 7.757a.75.75 0 0 0 1.06-1.06l-1.59-1.591a.75.75 0 0 0-1.061 1.06l1.59 1.591Z" />
-                    </svg>
+import { useState } from "react";
+
+// Icônes SVG
+const icons = {
+    dashboard: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+    ),
+    chart: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+    ),
+    settings: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    ),
+    history: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    bolt: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+    ),
+    menu: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    ),
+    close: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    ),
+};
+
+const menuItems = [
+    { id: "dashboard", label: "Tableau de bord", icon: icons.dashboard },
+    { id: "history", label: "Historique", icon: icons.history },
+    { id: "analytics", label: "Analytique", icon: icons.chart },
+    { id: "settings", label: "Paramètres", icon: icons.settings },
+];
+
+export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const handleNavigate = (pageId) => {
+        onNavigate?.(pageId);
+        setMobileMenuOpen(false);
+    };
+
+    // Logo avec éclair
+    const Logo = ({ showText = true }) => (
+        <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center shadow-md">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            {showText && (
+                <span className="font-semibold text-slate-800 text-lg tracking-tight">
+                    SuiveurEnergie
                 </span>
-                <span className="font-bold text-2xl">SuiveurEnergie</span>
-                <span
-                    className={`w-2 h-2 rounded-full ${
-                        connectionStatus === 'connected'
-                            ? 'bg-green-500 animate-pulse-dot'
-                            : 'bg-red-500'
-                    }`}
-                    title={connectionStatus === 'connected' ? 'Connecté' : 'Déconnecté'}
-                ></span>
-            </div>
-
-            {/* Menu de navigation */}
-            <div className="flex flex-col gap-4 flex-1 mt-12 px-5">
-                <div className="flex items-center w-full space-x-3 p-3 bg-white rounded-xl text-neutral-800 cursor-pointer">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5"
-                    >
-                        <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
-                        <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
-                    </svg>
-                    <span className="text-xs font-medium">Tableau de bord</span>
-                </div>
-
-                <div className="flex items-center w-full space-x-3 p-3 rounded-xl text-neutral-300 font-medium hover:text-white hover:font-bold hover:cursor-pointer">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="w-5 h-5"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-                        />
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                        />
-                    </svg>
-                    <span className="text-xs">Réglages</span>
-                </div>
-            </div>
-
-            {/* Pied de page */}
-            <div className="flex justify-between items-center mt-3 mx-8">
-                <span className="text-[9px] text-neutral-400">SuiveurEnergie v.1.0.0</span>
-            </div>
+            )}
         </div>
+    );
+
+    // Item de menu
+    const MenuItem = ({ item, collapsed = false }) => {
+        const isActive = currentPage === item.id;
+        return (
+            <button
+                onClick={() => handleNavigate(item.id)}
+                className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
+                    ${collapsed ? "justify-center" : ""}
+                    ${isActive 
+                        ? "bg-amber-50 text-amber-700 font-medium" 
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                    }
+                `}
+                title={collapsed ? item.label : undefined}
+            >
+                <span className={isActive ? "text-amber-600" : "text-slate-400"}>
+                    {item.icon}
+                </span>
+                {!collapsed && <span>{item.label}</span>}
+            </button>
+        );
+    };
+
+    return (
+        <>
+            {/* ====== SIDEBAR DESKTOP (lg+) ====== */}
+            <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
+                {/* Logo */}
+                <div className="p-5 border-b border-slate-100">
+                    <Logo />
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 p-4 space-y-1">
+                    {menuItems.map((item) => (
+                        <MenuItem key={item.id} item={item} />
+                    ))}
+                </nav>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 text-center">
+                        v0.0.19
+                    </p>
+                </div>
+            </aside>
+
+            {/* ====== SIDEBAR TABLETTE (md) ====== */}
+            <aside className="hidden md:flex lg:hidden flex-col w-16 bg-white border-r border-slate-200 h-screen sticky top-0">
+                {/* Logo icône seul */}
+                <div className="p-3 border-b border-slate-100 flex justify-center">
+                    <Logo showText={false} />
+                </div>
+
+                {/* Navigation icônes */}
+                <nav className="flex-1 p-2 space-y-1">
+                    {menuItems.map((item) => (
+                        <MenuItem key={item.id} item={item} collapsed />
+                    ))}
+                </nav>
+            </aside>
+
+            {/* ====== NAVBAR MOBILE (sm) ====== */}
+            <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200">
+                <div className="flex items-center justify-between px-4 py-3">
+                    <Logo />
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                    >
+                        {mobileMenuOpen ? icons.close : icons.menu}
+                    </button>
+                </div>
+
+                {/* Menu déroulant mobile */}
+                {mobileMenuOpen && (
+                    <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg">
+                        <nav className="p-3 space-y-1">
+                            {menuItems.map((item) => (
+                                <MenuItem key={item.id} item={item} />
+                            ))}
+                        </nav>
+                    </div>
+                )}
+            </header>
+
+            {/* Overlay pour fermer le menu mobile */}
+            {mobileMenuOpen && (
+                <div 
+                    className="md:hidden fixed inset-0 bg-black/20 z-40"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+        </>
     );
 }
 
