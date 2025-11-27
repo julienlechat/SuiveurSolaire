@@ -128,6 +128,7 @@ function App() {
                             <DailyStats 
                                 stats={graphData?.stats}
                                 mainPointStats={graphData?.stats?.pointStats?.find(p => p.point_id === 1)}
+                                currentPower={points.find(p => p.point_id === 1)?.power_w}
                                 loading={loadingGraph} 
                             />
 

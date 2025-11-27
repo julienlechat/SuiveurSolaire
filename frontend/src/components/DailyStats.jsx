@@ -1,6 +1,5 @@
 // Composant des statistiques journalières
-// Utilise le point principal (point_id = 1) pour éviter les doublons
-export default function DailyStats({ stats, mainPointStats, loading }) {
+export default function DailyStats({ stats, mainPointStats, currentPower, loading }) {
     if (loading) {
         return (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
@@ -14,20 +13,28 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
         );
     }
 
-    // Utiliser les stats du point principal si disponibles, sinon totaux
+    // Stats du point principal
     const consumption = mainPointStats?.import_kwh ?? stats?.totalConsumption ?? 0;
     const production = mainPointStats?.export_kwh ?? stats?.totalProduction ?? 0;
     const avgPower = mainPointStats?.avg_power ?? stats?.averagePower ?? 0;
     const maxPower = mainPointStats?.max_power ?? 0;
-    
-    // Calcul du coût (basé sur la consommation du point principal)
-    const pricePerKwh = 0.18; // Prix moyen
+    const pricePerKwh = 0.18;
     const estimatedCost = consumption * pricePerKwh;
-    
-    // Calcul du net (consommation - production) 
-    const netConsumption = Math.max(0, consumption - production);
 
     const items = [
+        {
+            label: "Maintenant",
+            value: currentPower != null ? Number(currentPower).toFixed(0) : "—",
+            unit: "W",
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            ),
+            color: "text-amber-600",
+            bgColor: "bg-amber-50",
+            highlight: true,
+        },
         {
             label: "Consommé",
             value: consumption.toFixed(2),
@@ -37,8 +44,8 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
             ),
-            color: "text-amber-600",
-            bgColor: "bg-amber-50",
+            color: "text-orange-600",
+            bgColor: "bg-orange-50",
         },
         {
             label: "Produit",
@@ -53,7 +60,7 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
             bgColor: "bg-emerald-50",
         },
         {
-            label: "Coût estimé",
+            label: "Coût",
             value: estimatedCost.toFixed(2),
             unit: "€",
             icon: (
@@ -65,32 +72,19 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
             bgColor: "bg-rose-50",
         },
         {
-            label: "Net",
-            value: netConsumption.toFixed(2),
-            unit: "kWh",
-            description: "Consommé - Produit",
-            icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-            ),
-            color: "text-indigo-600",
-            bgColor: "bg-indigo-50",
-        },
-        {
-            label: "Puissance moy.",
+            label: "Moyenne",
             value: avgPower.toFixed(0),
             unit: "W",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
             ),
             color: "text-blue-600",
             bgColor: "bg-blue-50",
         },
         {
-            label: "Pic puissance",
+            label: "Pic",
             value: maxPower.toFixed(0),
             unit: "W",
             icon: (
@@ -108,7 +102,10 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
             {items.map((item, index) => (
                 <div 
                     key={index} 
-                    className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow"
+                    className={`
+                        bg-white rounded-xl border p-4 hover:shadow-md transition-shadow
+                        ${item.highlight ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}
+                    `}
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <div className={`p-1.5 rounded-lg ${item.bgColor} ${item.color}`}>
@@ -119,7 +116,7 @@ export default function DailyStats({ stats, mainPointStats, loading }) {
                         </span>
                     </div>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-gray-900">
+                        <span className={`text-2xl font-bold ${item.highlight ? "text-amber-600" : "text-gray-900"}`}>
                             {item.value}
                         </span>
                         <span className="text-sm text-gray-500">{item.unit}</span>
