@@ -4,10 +4,42 @@ import { useState, useEffect, useMemo } from "react";
 export default function TempoCard({ tempoData, loading }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [monthColors, setMonthColors] = useState({});
+    const [todayColorDirect, setTodayColorDirect] = useState(null);
+    const [tomorrowColorDirect, setTomorrowColorDirect] = useState(null);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
+    }, []);
+
+    // Charger aujourd'hui et demain directement depuis l'API
+    useEffect(() => {
+        async function loadTodayTomorrow() {
+            try {
+                // Aujourd'hui
+                const todayRes = await fetch("https://www.api-couleur-tempo.fr/api/jourTempo/today");
+                if (todayRes.ok) {
+                    const data = await todayRes.json();
+                    const couleur = data?.libCouleur || data?.couleur;
+                    if (couleur) setTodayColorDirect(couleur.toUpperCase());
+                }
+            } catch (e) {
+                console.error("Error loading today color:", e);
+            }
+            
+            try {
+                // Demain
+                const tomorrowRes = await fetch("https://www.api-couleur-tempo.fr/api/jourTempo/tomorrow");
+                if (tomorrowRes.ok) {
+                    const data = await tomorrowRes.json();
+                    const couleur = data?.libCouleur || data?.couleur;
+                    if (couleur) setTomorrowColorDirect(couleur.toUpperCase());
+                }
+            } catch (e) {
+                // Demain pas encore disponible (avant 11h)
+            }
+        }
+        loadTodayTomorrow();
     }, []);
 
     // Charger les couleurs du mois
@@ -113,8 +145,12 @@ export default function TempoCard({ tempoData, loading }) {
         ROUGE: { bg: "bg-red-500", light: "bg-red-100", text: "text-red-700", label: "Rouge" },
     };
 
-    const today = colorConfig[tempoData.todayColor] || colorConfig.BLEU;
-    const tomorrow = colorConfig[tempoData.tomorrowColor];
+    // Utiliser les couleurs directes de l'API, sinon fallback sur tempoData du backend
+    const todayColor = todayColorDirect || tempoData?.todayColor;
+    const tomorrowColor = tomorrowColorDirect || tempoData?.tomorrowColor;
+    
+    const today = todayColor ? colorConfig[todayColor] : null;
+    const tomorrow = tomorrowColor ? colorConfig[tomorrowColor] : null;
 
     // Position actuelle et type de période
     const currentHour = currentTime.getHours();
@@ -156,12 +192,16 @@ export default function TempoCard({ tempoData, loading }) {
 
             {/* Couleurs jour */}
             <div className="flex gap-2 mb-3">
-                <div className={`flex-1 rounded-lg p-2 ${today.light}`}>
+                <div className={`flex-1 rounded-lg p-2 ${today?.light || "bg-gray-50"}`}>
                     <p className="text-[9px] text-gray-500 uppercase font-medium">Aujourd'hui</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${today.bg}`}></span>
-                        <span className={`font-bold text-sm ${today.text}`}>{today.label}</span>
-                    </div>
+                    {today ? (
+                        <div className="flex items-center gap-1 mt-0.5">
+                            <span className={`w-2.5 h-2.5 rounded-full ${today.bg}`}></span>
+                            <span className={`font-bold text-sm ${today.text}`}>{today.label}</span>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-gray-300 mt-0.5 block">Chargement...</span>
+                    )}
                 </div>
                 <div className={`flex-1 rounded-lg p-2 ${tomorrow?.light || "bg-gray-50"}`}>
                     <p className="text-[9px] text-gray-500 uppercase font-medium">Demain</p>
