@@ -24,10 +24,10 @@ ChartJS.register(
 );
 
 const COLORS = [
-    { border: "rgb(59, 130, 246)", bg: "rgba(59, 130, 246, 0.1)" },   // Bleu
-    { border: "rgb(239, 68, 68)", bg: "rgba(239, 68, 68, 0.1)" },     // Rouge
-    { border: "rgb(34, 197, 94)", bg: "rgba(34, 197, 94, 0.1)" },     // Vert
-    { border: "rgb(168, 85, 247)", bg: "rgba(168, 85, 247, 0.1)" },   // Violet
+    { border: "#3b82f6", bg: "rgba(59, 130, 246, 0.08)" },   // Bleu
+    { border: "#ef4444", bg: "rgba(239, 68, 68, 0.08)" },     // Rouge
+    { border: "#22c55e", bg: "rgba(34, 197, 94, 0.08)" },     // Vert
+    { border: "#a855f7", bg: "rgba(168, 85, 247, 0.08)" },   // Violet
 ];
 
 export default function PowerChart({ measurements, loading }) {
@@ -91,6 +91,7 @@ export default function PowerChart({ measurements, loading }) {
                 tension: 0.4,
                 pointRadius: 0,
                 pointHoverRadius: 4,
+                borderWidth: 2,
             };
         });
 
@@ -134,17 +135,21 @@ export default function PowerChart({ measurements, loading }) {
                 position: "top",
                 align: "end",
                 labels: {
-                    usePointStyle: true,
-                    pointStyle: "circle",
-                    padding: 15,
-                    font: { size: 12 },
+                    usePointStyle: false,
+                    boxWidth: 12,
+                    boxHeight: 3,
+                    padding: 12,
+                    font: { size: 11 },
+                    color: "#64748b",
                 },
             },
             tooltip: {
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                backgroundColor: "rgba(15, 23, 42, 0.9)",
                 padding: 12,
-                titleFont: { size: 13 },
+                titleFont: { size: 12, weight: "normal" },
                 bodyFont: { size: 12 },
+                borderColor: "rgba(255,255,255,0.1)",
+                borderWidth: 1,
                 callbacks: {
                     label: (context) => {
                         const value = context.parsed.y;
@@ -159,7 +164,7 @@ export default function PowerChart({ measurements, loading }) {
                 grid: { display: false },
                 ticks: {
                     maxRotation: 0,
-                    font: { size: 11 },
+                    font: { size: 10 },
                     color: "#94a3b8",
                     autoSkip: false,
                     callback: function (value, index) {
@@ -178,11 +183,11 @@ export default function PowerChart({ measurements, loading }) {
                 beginAtZero: true,
                 grid: { color: "#f1f5f9" },
                 ticks: {
-                    font: { size: 11 },
+                    font: { size: 10 },
                     color: "#94a3b8",
                     callback: (value) => {
-                        if (value >= 1000) return `${(value / 1000).toFixed(1)} kW`;
-                        return `${value} W`;
+                        if (value >= 1000) return `${(value / 1000).toFixed(1)}kW`;
+                        return `${value}W`;
                     },
                 },
             },
@@ -191,12 +196,19 @@ export default function PowerChart({ measurements, loading }) {
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <div className="flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span className="font-semibold text-gray-900">Évolution sur 24h</span>
-                <span className="text-xs text-gray-400 ml-auto">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <div>
+                        <span className="font-semibold text-gray-900">Évolution sur 24h</span>
+                        <span className="text-xs text-gray-400 ml-2">
+                            Puissance par point de mesure
+                        </span>
+                    </div>
+                </div>
+                <span className="text-xs text-gray-400">
                     {measurements?.length || 0} mesures
                 </span>
             </div>
@@ -206,4 +218,3 @@ export default function PowerChart({ measurements, loading }) {
         </div>
     );
 }
-

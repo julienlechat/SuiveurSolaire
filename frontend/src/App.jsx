@@ -124,9 +124,10 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Stats du jour */}
+                            {/* Stats du jour - utilise le point principal (id=1) */}
                             <DailyStats 
-                                stats={graphData?.stats} 
+                                stats={graphData?.stats}
+                                mainPointStats={graphData?.stats?.pointStats?.find(p => p.point_id === 1)}
                                 loading={loadingGraph} 
                             />
 

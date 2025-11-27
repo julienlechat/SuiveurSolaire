@@ -1,8 +1,9 @@
 // Composant des statistiques journalières
-export default function DailyStats({ stats, loading }) {
+// Utilise le point principal (point_id = 1) pour éviter les doublons
+export default function DailyStats({ stats, mainPointStats, loading }) {
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
                         <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
@@ -13,10 +14,23 @@ export default function DailyStats({ stats, loading }) {
         );
     }
 
+    // Utiliser les stats du point principal si disponibles, sinon totaux
+    const consumption = mainPointStats?.import_kwh ?? stats?.totalConsumption ?? 0;
+    const production = mainPointStats?.export_kwh ?? stats?.totalProduction ?? 0;
+    const avgPower = mainPointStats?.avg_power ?? stats?.averagePower ?? 0;
+    const maxPower = mainPointStats?.max_power ?? 0;
+    
+    // Calcul du coût (basé sur la consommation du point principal)
+    const pricePerKwh = 0.18; // Prix moyen
+    const estimatedCost = consumption * pricePerKwh;
+    
+    // Calcul du net (consommation - production) 
+    const netConsumption = Math.max(0, consumption - production);
+
     const items = [
         {
             label: "Consommé",
-            value: stats?.totalConsumption?.toFixed(2) || "0.00",
+            value: consumption.toFixed(2),
             unit: "kWh",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +42,7 @@ export default function DailyStats({ stats, loading }) {
         },
         {
             label: "Produit",
-            value: stats?.totalProduction?.toFixed(2) || "0.00",
+            value: production.toFixed(2),
             unit: "kWh",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +54,7 @@ export default function DailyStats({ stats, loading }) {
         },
         {
             label: "Coût estimé",
-            value: stats?.estimatedCost?.toFixed(2) || "0.00",
+            value: estimatedCost.toFixed(2),
             unit: "€",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,20 +65,21 @@ export default function DailyStats({ stats, loading }) {
             bgColor: "bg-rose-50",
         },
         {
-            label: "Revenu estimé",
-            value: stats?.estimatedRevenue?.toFixed(2) || "0.00",
-            unit: "€",
+            label: "Net",
+            value: netConsumption.toFixed(2),
+            unit: "kWh",
+            description: "Consommé - Produit",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
             ),
-            color: "text-emerald-600",
-            bgColor: "bg-emerald-50",
+            color: "text-indigo-600",
+            bgColor: "bg-indigo-50",
         },
         {
             label: "Puissance moy.",
-            value: stats?.averagePower?.toFixed(0) || "0",
+            value: avgPower.toFixed(0),
             unit: "W",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +91,7 @@ export default function DailyStats({ stats, loading }) {
         },
         {
             label: "Pic puissance",
-            value: Math.max(...(stats?.pointStats?.map(p => p.max_power) || [0])).toFixed(0),
+            value: maxPower.toFixed(0),
             unit: "W",
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,4 +129,3 @@ export default function DailyStats({ stats, loading }) {
         </div>
     );
 }
-

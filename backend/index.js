@@ -285,24 +285,33 @@ app.post("/api/measurements", async (req, res) => {
 app.get("/api/history-graph", async (req, res) => {
     try {
         const { date } = req.query;
-        
+
         // Fonction pour obtenir le décalage horaire de Paris
         const getParisOffset = (d) => {
-            const parisTime = new Date(d.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
-            const utcTime = new Date(d.toLocaleString("en-US", { timeZone: "UTC" }));
+            const parisTime = new Date(
+                d.toLocaleString("en-US", { timeZone: "Europe/Paris" })
+            );
+            const utcTime = new Date(
+                d.toLocaleString("en-US", { timeZone: "UTC" })
+            );
             return (parisTime - utcTime) / (60 * 60 * 1000);
         };
-        
+
         const dateStr = date || new Date().toISOString().split("T")[0];
-        
+
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            return res.status(400).json({ ok: false, error: "Invalid date format" });
+            return res
+                .status(400)
+                .json({ ok: false, error: "Invalid date format" });
         }
 
         const tempDate = new Date(dateStr + "T12:00:00Z");
         const offset = getParisOffset(tempDate);
-        const offsetStr = offset >= 0 ? `+${String(offset).padStart(2, "0")}:00` : `-${String(Math.abs(offset)).padStart(2, "0")}:00`;
-        
+        const offsetStr =
+            offset >= 0
+                ? `+${String(offset).padStart(2, "0")}:00`
+                : `-${String(Math.abs(offset)).padStart(2, "0")}:00`;
+
         const startOfDay = new Date(dateStr + "T00:00:00" + offsetStr);
         const endOfDay = new Date(dateStr + "T23:59:59.999" + offsetStr);
 
@@ -325,8 +334,11 @@ app.get("/api/history-graph", async (req, res) => {
               AND mp.active = true
             ORDER BY m.ts ASC, mp.id ASC
         `;
-        
-        const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        const result = await pool.query(sql, [
+            startOfDay.toISOString(),
+            endOfDay.toISOString(),
+        ]);
 
         // Stats par point
         const statsSql = `
@@ -347,14 +359,17 @@ app.get("/api/history-graph", async (req, res) => {
             ORDER BY mp.id
         `;
 
-        const statsResult = await pool.query(statsSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+        const statsResult = await pool.query(statsSql, [
+            startOfDay.toISOString(),
+            endOfDay.toISOString(),
+        ]);
 
         // Calculs globaux
         let totalConsumption = 0;
         let totalProduction = 0;
         let totalAvgPower = 0;
 
-        const pointStats = statsResult.rows.map(row => {
+        const pointStats = statsResult.rows.map((row) => {
             const importKwh = parseFloat(row.import_kwh || 0);
             const exportKwh = parseFloat(row.export_kwh || 0);
             totalConsumption += importKwh;
@@ -402,7 +417,7 @@ app.get("/api/tempo", async (req, res) => {
     try {
         const client = await pool.connect();
         let contractRow = null;
-        
+
         try {
             contractRow = await getActiveContract(client);
         } finally {
@@ -410,7 +425,7 @@ app.get("/api/tempo", async (req, res) => {
         }
 
         const tempoInfo = await getTempoInfo(contractRow);
-        
+
         res.json({
             ok: true,
             ...tempoInfo,

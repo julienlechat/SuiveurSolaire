@@ -53,8 +53,8 @@ export default function Header({
                             {title}
                         </h2>
                         <p className="text-sm text-gray-600">
-{subtitle ||
-                                 "Suivi énergétique de votre installation"}
+                            {subtitle ||
+                                "Suivi énergétique de votre installation"}
                             {lastUpdate && (
                                 <>
                                     <span className="mx-1">•</span>
