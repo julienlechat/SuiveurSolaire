@@ -109,7 +109,7 @@ export default function TempoCard({ tempoData, loading }) {
 
     const colorConfig = {
         BLEU: { bg: "bg-sky-500", light: "bg-sky-100", text: "text-sky-700", label: "Bleu" },
-        BLANC: { bg: "bg-slate-400", light: "bg-slate-100", text: "text-slate-700", label: "Blanc" },
+        BLANC: { bg: "bg-white border-2 border-gray-300", light: "bg-gray-50", text: "text-gray-700", label: "Blanc" },
         ROUGE: { bg: "bg-red-500", light: "bg-red-100", text: "text-red-700", label: "Rouge" },
     };
 
@@ -235,8 +235,8 @@ export default function TempoCard({ tempoData, loading }) {
                                 bgClass = "bg-sky-500";
                                 textClass = "text-white";
                             } else if (color.includes("BLANC")) {
-                                bgClass = "bg-slate-400";
-                                textClass = "text-white";
+                                bgClass = "bg-white border border-gray-300";
+                                textClass = "text-gray-700";
                             } else if (color.includes("ROUGE")) {
                                 bgClass = "bg-red-500";
                                 textClass = "text-white";
@@ -274,9 +274,9 @@ export default function TempoCard({ tempoData, loading }) {
                         <span className="w-2 h-2 rounded-full bg-sky-500"></span>
                         <span className="text-[10px] font-bold text-sky-700">{tempoData.stats.joursBleuRestants}</span>
                     </div>
-                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-slate-100 rounded">
-                        <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                        <span className="text-[10px] font-bold text-slate-700">{tempoData.stats.joursBlancRestants}</span>
+                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-gray-50 rounded border border-gray-200">
+                        <span className="w-2 h-2 rounded-full bg-white border border-gray-400"></span>
+                        <span className="text-[10px] font-bold text-gray-700">{tempoData.stats.joursBlancRestants}</span>
                     </div>
                     <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-red-50 rounded">
                         <span className="w-2 h-2 rounded-full bg-red-500"></span>

@@ -127,7 +127,25 @@ async function fetchTempoStats() {
 }
 
 /**
- * Récupère la couleur de demain
+ * Récupère la couleur d'aujourd'hui via /jourTempo/today
+ */
+async function fetchTempoToday() {
+    try {
+        const response = await fetch(`${TEMPO_API_BASE}/jourTempo/today`);
+        if (!response.ok) {
+            return null;
+        }
+        const data = await response.json();
+        return normalizeColor(data?.libCouleur) || 
+               normalizeColor(data?.couleur);
+    } catch (error) {
+        console.error("[TempoService] Unable to fetch tempo today:", error);
+        return null;
+    }
+}
+
+/**
+ * Récupère la couleur de demain via /jourTempo/tomorrow
  */
 async function fetchTempoTomorrow() {
     try {
@@ -137,9 +155,8 @@ async function fetchTempoTomorrow() {
             return null;
         }
         const data = await response.json();
-        return normalizeColor(data?.couleur) || 
-               normalizeColor(data?.couleurJour) ||
-               normalizeColor(data?.jourTempo?.couleur);
+        return normalizeColor(data?.libCouleur) || 
+               normalizeColor(data?.couleur);
     } catch (error) {
         console.error("[TempoService] Unable to fetch tempo tomorrow:", error);
         return null;
@@ -148,28 +165,21 @@ async function fetchTempoTomorrow() {
 
 /**
  * Récupère toutes les infos Tempo pour le dashboard
+ * Fonctionne même sans contrat configuré (affichage informatif)
  */
 async function getTempoInfo(contractRow) {
-    if (!contractRow || contractRow.contract_type?.toUpperCase() !== "TEMPO") {
-        return null;
-    }
-
     try {
-        const [nowData, stats, tomorrowColor] = await Promise.all([
+        const [todayColor, tomorrowColor, nowData, stats] = await Promise.all([
+            fetchTempoToday().catch(() => null),
+            fetchTempoTomorrow().catch(() => null),
             fetchTempoNow().catch(() => null),
             fetchTempoStats().catch(() => null),
-            fetchTempoTomorrow().catch(() => null),
         ]);
 
-        // Déterminer la couleur du jour
-        let todayColor = null;
-        if (nowData?.codeCouleur === 1) todayColor = "BLEU";
-        else if (nowData?.codeCouleur === 2) todayColor = "BLANC";
-        else if (nowData?.codeCouleur === 3) todayColor = "ROUGE";
-
-        // Déterminer HP/HC
-        let isHeuresCreuses = false;
-        if (nowData?.codeHoraire === 2) isHeuresCreuses = true;
+        // Déterminer HP/HC (6h-22h = HP)
+        const now = new Date();
+        const hour = now.getHours();
+        const isHeuresCreuses = hour < 6 || hour >= 22;
 
         return {
             todayColor,
