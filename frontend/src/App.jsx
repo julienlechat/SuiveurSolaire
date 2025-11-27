@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import DailyStats from "./components/DailyStats";
 import TempoCard from "./components/TempoCard";
 import PowerChart from "./components/PowerChart";
+import PointCard from "./components/PointCard";
 
 const REFRESH_MS = Number(import.meta.env.VITE_REFRESH_MS || 5000);
 
@@ -157,81 +158,29 @@ function App() {
                                     {[1, 2, 3, 4].map((i) => (
                                         <div 
                                             key={i} 
-                                            className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse"
+                                            className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse"
                                         >
                                             <div className="h-4 bg-slate-200 rounded w-2/3 mb-3"></div>
-                                            <div className="h-8 bg-slate-200 rounded w-1/2 mb-2"></div>
-                                            <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                            <div className="h-8 bg-slate-200 rounded w-1/2 mb-4"></div>
+                                            <div className="space-y-2">
+                                                <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                                <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {points.map((p) => (
-                                        <div
+                                        <PointCard
                                             key={p.point_id}
-                                            className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow"
-                                        >
-                                            {/* Header de la carte */}
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <h3 className="font-semibold text-slate-800">
-                                                        {p.point_name}
-                                                    </h3>
-                                                    <p className="text-xs text-slate-400">
-                                                        Module {p.module}, Ch. {p.channel}
-                                                    </p>
-                                                </div>
-                                                {/* Badge direction */}
-                                                <span className={`
-                                                    text-xs px-2 py-1 rounded-full font-medium
-                                                    ${p.direction_export 
-                                                        ? "bg-emerald-50 text-emerald-600" 
-                                                        : "bg-blue-50 text-blue-600"
-                                                    }
-                                                `}>
-                                                    {p.direction_export ? "Production" : "Conso."}
-                                                </span>
-                                            </div>
-
-                                            {/* Puissance */}
-                                            <p className="text-3xl font-bold text-slate-800 mb-3">
-                                                {formatNumber(p.power_w, 0)}
-                                                <span className="text-lg font-normal text-slate-400 ml-1">W</span>
-                                            </p>
-
-                                            {/* Détails */}
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                <div className="bg-slate-50 rounded-lg px-3 py-2">
-                                                    <p className="text-slate-400 text-xs">Tension</p>
-                                                    <p className="font-medium text-slate-700">
-                                                        {formatNumber(p.voltage_v, 1)} V
-                                                    </p>
-                                                </div>
-                                                <div className="bg-slate-50 rounded-lg px-3 py-2">
-                                                    <p className="text-slate-400 text-xs">Courant</p>
-                                                    <p className="font-medium text-slate-700">
-                                                        {formatNumber(p.current_a, 2)} A
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* kWh */}
-                                            <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
-                                                <div>
-                                                    <span className="text-slate-400">Import:</span>
-                                                    <span className="ml-1 text-slate-600 font-medium">
-                                                        {formatNumber(p.import_kwh_total, 3)} kWh
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-slate-400">Export:</span>
-                                                    <span className="ml-1 text-slate-600 font-medium">
-                                                        {formatNumber(p.export_kwh_total, 3)} kWh
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            point={p}
+                                            stats={graphData?.stats?.pointStats?.find(
+                                                (s) => s.point_id === p.point_id
+                                            )}
+                                        />
                                     ))}
                                 </div>
                             )}
