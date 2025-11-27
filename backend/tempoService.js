@@ -8,6 +8,18 @@ let tempoCache = {
     expiresAt: 0,
 };
 
+let tempoNowCache = {
+    data: null,
+    fetchedAt: 0,
+    expiresAt: 0,
+};
+
+let tempoStatsCache = {
+    data: null,
+    fetchedAt: 0,
+    expiresAt: 0,
+};
+
 function normalizeColor(rawColor) {
     if (!rawColor) return null;
     const lowered = String(rawColor).toLowerCase();
@@ -17,6 +29,9 @@ function normalizeColor(rawColor) {
     return null;
 }
 
+/**
+ * Récupère la couleur du jour via l'API Tempo
+ */
 async function fetchTempoColor() {
     const now = Date.now();
     if (tempoCache.color && tempoCache.expiresAt > now) {
@@ -31,7 +46,6 @@ async function fetchTempoColor() {
             );
         }
         const data = await response.json();
-        // L'API peut renvoyer plusieurs formats de clé selon les ressources.
         const color =
             normalizeColor(data?.couleur) ||
             normalizeColor(data?.couleurJour) ||
@@ -49,9 +63,133 @@ async function fetchTempoColor() {
         return color;
     } catch (error) {
         console.error("[TempoService] Unable to fetch tempo color:", error);
-        // Laisser expirer rapidement afin de retenter plus tard
         tempoCache.expiresAt = Date.now() + 5 * 60 * 1000;
         throw error;
+    }
+}
+
+/**
+ * Récupère les infos temps réel : couleur, code horaire, tarif
+ * GET /api/now
+ */
+async function fetchTempoNow() {
+    const now = Date.now();
+    if (tempoNowCache.data && tempoNowCache.expiresAt > now) {
+        return tempoNowCache.data;
+    }
+
+    try {
+        const response = await fetch(`${TEMPO_API_BASE}/TempsReel`);
+        if (!response.ok) {
+            throw new Error(`Tempo Now API error (${response.status})`);
+        }
+        const data = await response.json();
+        
+        tempoNowCache = {
+            data,
+            fetchedAt: now,
+            expiresAt: now + 60 * 1000, // Cache 1 minute pour les données temps réel
+        };
+        return data;
+    } catch (error) {
+        console.error("[TempoService] Unable to fetch tempo now:", error);
+        throw error;
+    }
+}
+
+/**
+ * Récupère les statistiques : jours consommés/restants par couleur
+ * GET /api/stats
+ */
+async function fetchTempoStats() {
+    const now = Date.now();
+    if (tempoStatsCache.data && tempoStatsCache.expiresAt > now) {
+        return tempoStatsCache.data;
+    }
+
+    try {
+        const response = await fetch(`${TEMPO_API_BASE}/Statistiques`);
+        if (!response.ok) {
+            throw new Error(`Tempo Stats API error (${response.status})`);
+        }
+        const data = await response.json();
+        
+        tempoStatsCache = {
+            data,
+            fetchedAt: now,
+            expiresAt: now + CACHE_TTL_MS,
+        };
+        return data;
+    } catch (error) {
+        console.error("[TempoService] Unable to fetch tempo stats:", error);
+        throw error;
+    }
+}
+
+/**
+ * Récupère la couleur de demain
+ */
+async function fetchTempoTomorrow() {
+    try {
+        const response = await fetch(`${TEMPO_API_BASE}/jourTempo/tomorrow`);
+        if (!response.ok) {
+            // Couleur de demain pas encore disponible (avant 11h)
+            return null;
+        }
+        const data = await response.json();
+        return normalizeColor(data?.couleur) || 
+               normalizeColor(data?.couleurJour) ||
+               normalizeColor(data?.jourTempo?.couleur);
+    } catch (error) {
+        console.error("[TempoService] Unable to fetch tempo tomorrow:", error);
+        return null;
+    }
+}
+
+/**
+ * Récupère toutes les infos Tempo pour le dashboard
+ */
+async function getTempoInfo(contractRow) {
+    if (!contractRow || contractRow.contract_type?.toUpperCase() !== "TEMPO") {
+        return null;
+    }
+
+    try {
+        const [nowData, stats, tomorrowColor] = await Promise.all([
+            fetchTempoNow().catch(() => null),
+            fetchTempoStats().catch(() => null),
+            fetchTempoTomorrow().catch(() => null),
+        ]);
+
+        // Déterminer la couleur du jour
+        let todayColor = null;
+        if (nowData?.codeCouleur === 1) todayColor = "BLEU";
+        else if (nowData?.codeCouleur === 2) todayColor = "BLANC";
+        else if (nowData?.codeCouleur === 3) todayColor = "ROUGE";
+
+        // Déterminer HP/HC
+        let isHeuresCreuses = false;
+        if (nowData?.codeHoraire === 2) isHeuresCreuses = true;
+
+        return {
+            todayColor,
+            tomorrowColor,
+            isHeuresCreuses,
+            tarifActuel: nowData?.tarifKwh || null,
+            libelleTarif: nowData?.libTarif || null,
+            stats: stats ? {
+                periode: stats.periode,
+                joursBleuRestants: stats.joursBleusRestants,
+                joursBlancRestants: stats.joursBlancsRestants,
+                joursRougeRestants: stats.joursRougesRestants,
+                joursBleuConsommes: stats.joursBleusConsommes,
+                joursBlancConsommes: stats.joursBlancsConsommes,
+                joursRougeConsommes: stats.joursRougesConsommes,
+            } : null,
+        };
+    } catch (error) {
+        console.error("[TempoService] getTempoInfo error:", error);
+        return null;
     }
 }
 
@@ -80,7 +218,6 @@ function isPeakMinute(localMinutes, startMinutes, endMinutes) {
     if (startMinutes < endMinutes) {
         return localMinutes >= startMinutes && localMinutes < endMinutes;
     }
-    // Créneau qui traverse minuit
     return (
         localMinutes >= startMinutes || localMinutes < endMinutes % (24 * 60)
     );
@@ -111,7 +248,6 @@ async function getHourTypeForContract(contractRow, referenceDate = new Date()) {
         try {
             color = await fetchTempoColor();
         } catch (error) {
-            // Impossible de récupérer la couleur : se replier sur HP/HC uniquement
             return isPeak ? "HP" : "HC";
         }
         const prefix = isPeak ? "HP" : "HC";
@@ -124,4 +260,8 @@ async function getHourTypeForContract(contractRow, referenceDate = new Date()) {
 
 module.exports = {
     getHourTypeForContract,
+    getTempoInfo,
+    fetchTempoColor,
+    fetchTempoNow,
+    fetchTempoStats,
 };

@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
-import { fetchLatest } from "./api";
+import { useEffect, useState, useCallback } from "react";
+import { fetchLatest, fetchHistoryGraph, fetchTempo } from "./api";
 import Layout from "./components/Layout";
 import Header from "./components/Header";
+import DailyStats from "./components/DailyStats";
+import TempoCard from "./components/TempoCard";
+import PowerChart from "./components/PowerChart";
 
 const REFRESH_MS = Number(import.meta.env.VITE_REFRESH_MS || 5000);
 
@@ -21,7 +24,16 @@ function App() {
     const [selectedDate, setSelectedDate] = useState(
         new Date().toISOString().split("T")[0]
     );
+    
+    // Données graphique et stats
+    const [graphData, setGraphData] = useState(null);
+    const [loadingGraph, setLoadingGraph] = useState(true);
+    
+    // Données Tempo
+    const [tempoData, setTempoData] = useState(null);
+    const [loadingTempo, setLoadingTempo] = useState(true);
 
+    // Chargement des données temps réel
     useEffect(() => {
         let timer;
 
@@ -49,6 +61,46 @@ function App() {
         return () => clearInterval(timer);
     }, []);
 
+    // Chargement des données graphique quand la date change
+    const loadGraphData = useCallback(async (date) => {
+        setLoadingGraph(true);
+        try {
+            const data = await fetchHistoryGraph(date);
+            if (data.ok) {
+                setGraphData(data);
+            }
+        } catch (err) {
+            console.error("Error loading graph data:", err);
+        } finally {
+            setLoadingGraph(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadGraphData(selectedDate);
+    }, [selectedDate, loadGraphData]);
+
+    // Chargement des données Tempo
+    useEffect(() => {
+        async function loadTempo() {
+            try {
+                const data = await fetchTempo();
+                if (data.ok) {
+                    setTempoData(data);
+                }
+            } catch (err) {
+                console.error("Error loading tempo data:", err);
+            } finally {
+                setLoadingTempo(false);
+            }
+        }
+
+        loadTempo();
+        // Rafraîchir toutes les 5 minutes
+        const timer = setInterval(loadTempo, 5 * 60 * 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     // Contenu selon la page active
     const renderContent = () => {
         switch (currentPage) {
@@ -72,8 +124,33 @@ function App() {
                                 </div>
                             )}
 
-                            {/* Loading */}
-                            {loading && (
+                            {/* Stats du jour */}
+                            <DailyStats 
+                                stats={graphData?.stats} 
+                                loading={loadingGraph} 
+                            />
+
+                            {/* Grille principale */}
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                                {/* Graphique (3 colonnes) */}
+                                <div className="lg:col-span-3">
+                                    <PowerChart 
+                                        measurements={graphData?.measurements}
+                                        loading={loadingGraph}
+                                    />
+                                </div>
+
+                                {/* Carte Tempo (1 colonne) */}
+                                <div className="lg:col-span-1">
+                                    <TempoCard 
+                                        tempoData={tempoData}
+                                        loading={loadingTempo}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Cartes des points de mesure */}
+                            {loading ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {[1, 2, 3, 4].map((i) => (
                                         <div 
@@ -86,10 +163,7 @@ function App() {
                                         </div>
                                     ))}
                                 </div>
-                            )}
-
-                            {/* Cartes des points de mesure */}
-                            {!loading && (
+                            ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {points.map((p) => (
                                         <div
@@ -114,7 +188,7 @@ function App() {
                                                         : "bg-blue-50 text-blue-600"
                                                     }
                                                 `}>
-                                                    {p.direction_export ? "Production" : "Consommation"}
+                                                    {p.direction_export ? "Production" : "Conso."}
                                                 </span>
                                             </div>
 

@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 
-const { getHourTypeForContract } = require("./tempoService");
+const { getHourTypeForContract, getTempoInfo } = require("./tempoService");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -275,6 +275,149 @@ app.post("/api/measurements", async (req, res) => {
         res.status(500).json({ ok: false, error: err.message });
     } finally {
         client.release();
+    }
+});
+
+/**
+ * GET /api/history-graph?date=YYYY-MM-DD
+ * Retourne les données pour le graphique 24h
+ */
+app.get("/api/history-graph", async (req, res) => {
+    try {
+        const { date } = req.query;
+        
+        // Fonction pour obtenir le décalage horaire de Paris
+        const getParisOffset = (d) => {
+            const parisTime = new Date(d.toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+            const utcTime = new Date(d.toLocaleString("en-US", { timeZone: "UTC" }));
+            return (parisTime - utcTime) / (60 * 60 * 1000);
+        };
+        
+        const dateStr = date || new Date().toISOString().split("T")[0];
+        
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return res.status(400).json({ ok: false, error: "Invalid date format" });
+        }
+
+        const tempDate = new Date(dateStr + "T12:00:00Z");
+        const offset = getParisOffset(tempDate);
+        const offsetStr = offset >= 0 ? `+${String(offset).padStart(2, "0")}:00` : `-${String(Math.abs(offset)).padStart(2, "0")}:00`;
+        
+        const startOfDay = new Date(dateStr + "T00:00:00" + offsetStr);
+        const endOfDay = new Date(dateStr + "T23:59:59.999" + offsetStr);
+
+        // Récupérer toutes les mesures de la journée
+        const sql = `
+            SELECT
+                m.ts,
+                mp.id AS point_id,
+                mp.name AS point_name,
+                m.power_w,
+                m.voltage_v,
+                m.current_a,
+                m.import_kwh_total,
+                m.export_kwh_total,
+                m.direction_export
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            ORDER BY m.ts ASC, mp.id ASC
+        `;
+        
+        const result = await pool.query(sql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Stats par point
+        const statsSql = `
+            SELECT
+                mp.id AS point_id,
+                mp.name AS point_name,
+                COUNT(*) AS measurement_count,
+                AVG(m.power_w) AS avg_power,
+                MAX(m.power_w) AS max_power,
+                COALESCE(SUM(m.import_kwh_total), 0) AS import_kwh,
+                COALESCE(SUM(m.export_kwh_total), 0) AS export_kwh
+            FROM measurement m
+            JOIN measurement_point mp ON m.point_id = mp.id
+            WHERE m.ts >= $1
+              AND m.ts <= $2
+              AND mp.active = true
+            GROUP BY mp.id, mp.name
+            ORDER BY mp.id
+        `;
+
+        const statsResult = await pool.query(statsSql, [startOfDay.toISOString(), endOfDay.toISOString()]);
+
+        // Calculs globaux
+        let totalConsumption = 0;
+        let totalProduction = 0;
+        let totalAvgPower = 0;
+
+        const pointStats = statsResult.rows.map(row => {
+            const importKwh = parseFloat(row.import_kwh || 0);
+            const exportKwh = parseFloat(row.export_kwh || 0);
+            totalConsumption += importKwh;
+            totalProduction += exportKwh;
+            totalAvgPower += parseFloat(row.avg_power || 0);
+
+            return {
+                point_id: row.point_id,
+                point_name: row.point_name,
+                measurement_count: parseInt(row.measurement_count || 0),
+                import_kwh: importKwh,
+                export_kwh: exportKwh,
+                avg_power: parseFloat(row.avg_power || 0),
+                max_power: parseFloat(row.max_power || 0),
+            };
+        });
+
+        const pricePerKwh = 0.18;
+        const sellPricePerKwh = 0.13;
+
+        res.json({
+            ok: true,
+            date: dateStr,
+            measurements: result.rows,
+            stats: {
+                totalConsumption,
+                totalProduction,
+                estimatedCost: totalConsumption * pricePerKwh,
+                estimatedRevenue: totalProduction * sellPricePerKwh,
+                averagePower: totalAvgPower,
+                pointStats,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/tempo
+ * Retourne les infos Tempo EDF
+ */
+app.get("/api/tempo", async (req, res) => {
+    try {
+        const client = await pool.connect();
+        let contractRow = null;
+        
+        try {
+            contractRow = await getActiveContract(client);
+        } finally {
+            client.release();
+        }
+
+        const tempoInfo = await getTempoInfo(contractRow);
+        
+        res.json({
+            ok: true,
+            ...tempoInfo,
+        });
+    } catch (err) {
+        console.error("[API] Error in /api/tempo:", err);
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 
