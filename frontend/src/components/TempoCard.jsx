@@ -1,19 +1,91 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-// Carte Tempo EDF compacte et élégante
+// Carte Tempo EDF avec calendrier mensuel
 export default function TempoCard({ tempoData, loading }) {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [monthColors, setMonthColors] = useState({});
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
+    // Charger les couleurs du mois
+    useEffect(() => {
+        async function loadMonthColors() {
+            try {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const colors = {};
+
+                // Charger les jours du mois (du 1er jusqu'à aujourd'hui + demain si dispo)
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                
+                for (let day = 1; day <= Math.min(today.getDate() + 1, lastDay); day++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    try {
+                        const res = await fetch(`https://www.api-couleur-tempo.fr/api/jourTempo/${dateStr}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data?.couleur) {
+                                colors[day] = data.couleur.toUpperCase();
+                            }
+                        }
+                    } catch (e) {
+                        // Ignorer les erreurs pour les jours individuels
+                    }
+                }
+                
+                setMonthColors(colors);
+            } catch (e) {
+                console.error("Error loading month colors:", e);
+            }
+        }
+
+        loadMonthColors();
+    }, []);
+
+    // Générer le calendrier du mois
+    const calendar = useMemo(() => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        
+        // Jour de la semaine du 1er (0 = dimanche, on veut lundi = 0)
+        let startDay = firstDay.getDay() - 1;
+        if (startDay < 0) startDay = 6;
+
+        const weeks = [];
+        let currentWeek = new Array(startDay).fill(null);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            currentWeek.push(day);
+            if (currentWeek.length === 7) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
+        }
+        
+        // Compléter la dernière semaine
+        if (currentWeek.length > 0) {
+            while (currentWeek.length < 7) {
+                currentWeek.push(null);
+            }
+            weeks.push(currentWeek);
+        }
+
+        return { weeks, today: today.getDate(), month, year };
+    }, []);
+
     if (loading) {
         return (
             <div className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse h-full">
                 <div className="h-4 bg-slate-200 rounded w-1/3 mb-3"></div>
-                <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+                <div className="h-32 bg-slate-200 rounded"></div>
             </div>
         );
     }
@@ -22,7 +94,11 @@ export default function TempoCard({ tempoData, loading }) {
         return (
             <div className="bg-white rounded-xl border border-slate-200 p-4 h-full">
                 <div className="flex items-center gap-2">
-                    <span className="text-amber-500 text-lg">⚡</span>
+                    <div className="p-1.5 rounded-lg bg-amber-50">
+                        <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
                     <span className="font-semibold text-gray-900 text-sm">Tempo EDF</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">Non configuré</p>
@@ -39,21 +115,30 @@ export default function TempoCard({ tempoData, loading }) {
     const today = colorConfig[tempoData.todayColor] || colorConfig.BLEU;
     const tomorrow = colorConfig[tempoData.tomorrowColor];
 
-    // Position actuelle (%)
+    // Position actuelle et type de période
     const currentHour = currentTime.getHours();
     const currentMinute = currentTime.getMinutes();
     const position = ((currentHour * 60 + currentMinute) / (24 * 60)) * 100;
-
-    // HP: 6h-22h
+    
+    // HP: 6h-22h, HC: reste
     const hpStart = 6, hpEnd = 22;
+    const isInHP = currentHour >= hpStart && currentHour < hpEnd;
+
+    // Nom du mois
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+                        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-4 h-full flex flex-col">
-            {/* Header compact */}
+            {/* Header avec icône style KPI */}
             <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-amber-500 text-base">⚡</span>
-                    <span className="font-semibold text-gray-900 text-sm">Tempo</span>
+                <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-amber-50">
+                        <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <span className="font-semibold text-gray-900 text-sm">Tempo EDF</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-gray-400">
@@ -61,7 +146,7 @@ export default function TempoCard({ tempoData, loading }) {
                     </span>
                     <span className={`
                         text-[9px] px-1.5 py-0.5 rounded font-bold
-                        ${tempoData.isHeuresCreuses ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"}
+                        ${tempoData.isHeuresCreuses ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}
                     `}>
                         {tempoData.isHeuresCreuses ? "HC" : "HP"}
                     </span>
@@ -90,30 +175,24 @@ export default function TempoCard({ tempoData, loading }) {
                 </div>
             </div>
 
-            {/* Timeline HP/HC élégante */}
+            {/* Timeline HP/HC avec couleurs claires */}
             <div className="mb-3">
-                <div className="relative h-5 rounded-full overflow-hidden bg-gradient-to-r from-emerald-400 via-amber-400 to-emerald-400"
-                    style={{
-                        background: `linear-gradient(to right, 
-                            #34d399 0%, 
-                            #34d399 ${(hpStart/24)*100}%, 
-                            #fbbf24 ${(hpStart/24)*100}%, 
-                            #fbbf24 ${(hpEnd/24)*100}%, 
-                            #34d399 ${(hpEnd/24)*100}%, 
-                            #34d399 100%)`
-                    }}
-                >
-                    {/* Curseur position actuelle */}
+                <div className="relative h-4 rounded-full overflow-hidden flex">
+                    {/* HC matin (0h-6h) */}
+                    <div className="bg-emerald-100" style={{ width: `${(hpStart/24)*100}%` }} />
+                    {/* HP (6h-22h) */}
+                    <div className="bg-amber-100" style={{ width: `${((hpEnd-hpStart)/24)*100}%` }} />
+                    {/* HC soir (22h-24h) */}
+                    <div className="bg-emerald-100" style={{ width: `${((24-hpEnd)/24)*100}%` }} />
+                    
+                    {/* Curseur dynamique */}
                     <div 
-                        className="absolute top-0 bottom-0 w-0.5 bg-white shadow-md z-10"
-                        style={{ left: `${position}%`, boxShadow: "0 0 4px rgba(0,0,0,0.3)" }}
-                    >
-                        <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow" />
-                        <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow" />
-                    </div>
+                        className={`absolute top-0 bottom-0 w-1 rounded-full ${isInHP ? "bg-amber-500" : "bg-emerald-500"}`}
+                        style={{ left: `calc(${position}% - 2px)` }}
+                    />
                 </div>
-                {/* Labels heures */}
-                <div className="flex justify-between mt-1 text-[8px] text-gray-400 px-0.5">
+                {/* Labels */}
+                <div className="flex justify-between mt-0.5 text-[8px] text-gray-400">
                     <span>0h</span>
                     <span>6h</span>
                     <span>12h</span>
@@ -122,32 +201,85 @@ export default function TempoCard({ tempoData, loading }) {
                 </div>
             </div>
 
-            {/* Tarif actuel */}
-            {tempoData.tarifActuel && (
-                <div className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg mb-3">
-                    <span className="text-[10px] text-gray-500 uppercase font-medium">Tarif</span>
-                    <span className="font-bold text-gray-900">
-                        {(tempoData.tarifActuel * 100).toFixed(2)} <span className="text-xs font-normal text-gray-500">c€/kWh</span>
-                    </span>
+            {/* Calendrier du mois */}
+            <div className="flex-1">
+                <p className="text-[9px] text-gray-500 uppercase font-medium mb-1.5">
+                    {monthNames[calendar.month]} {calendar.year}
+                </p>
+                
+                {/* Jours de la semaine */}
+                <div className="grid grid-cols-7 gap-0.5 mb-1">
+                    {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
+                        <div key={i} className="text-[8px] text-gray-400 text-center font-medium">
+                            {d}
+                        </div>
+                    ))}
                 </div>
-            )}
 
-            {/* Jours restants */}
+                {/* Grille des jours */}
+                <div className="grid grid-cols-7 gap-1">
+                    {calendar.weeks.flat().map((day, i) => {
+                        if (!day) return <div key={i} />;
+
+                        const color = monthColors[day];
+                        const isToday = day === calendar.today;
+                        const isPast = day < calendar.today;
+                        const isTomorrow = day === calendar.today + 1;
+
+                        let bgClass = "";
+                        let textClass = "text-gray-400";
+
+                        if (color) {
+                            if (color.includes("BLEU")) {
+                                bgClass = "bg-sky-500";
+                                textClass = "text-white";
+                            } else if (color.includes("BLANC")) {
+                                bgClass = "bg-slate-400";
+                                textClass = "text-white";
+                            } else if (color.includes("ROUGE")) {
+                                bgClass = "bg-red-500";
+                                textClass = "text-white";
+                            }
+                        } else if (isPast) {
+                            // Jours passés sans couleur connue
+                            bgClass = "bg-gray-100";
+                            textClass = "text-gray-500";
+                        } else {
+                            // Jours futurs sans info
+                            textClass = "text-gray-300";
+                        }
+
+                        return (
+                            <div
+                                key={i}
+                                className={`
+                                    w-5 h-5 mx-auto rounded-full flex items-center justify-center
+                                    text-[8px] font-medium
+                                    ${bgClass} ${textClass}
+                                    ${isToday ? "ring-1 ring-gray-600 ring-offset-1" : ""}
+                                `}
+                            >
+                                {day}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Jours restants compact */}
             {tempoData.stats && (
-                <div className="mt-auto">
-                    <div className="flex gap-1">
-                        <div className="flex-1 text-center py-1.5 bg-sky-50 rounded-lg">
-                            <span className="block text-sm font-bold text-sky-600">{tempoData.stats.joursBleuRestants}</span>
-                            <span className="text-[8px] text-sky-500 uppercase">Bleu</span>
-                        </div>
-                        <div className="flex-1 text-center py-1.5 bg-slate-100 rounded-lg">
-                            <span className="block text-sm font-bold text-slate-600">{tempoData.stats.joursBlancRestants}</span>
-                            <span className="text-[8px] text-slate-500 uppercase">Blanc</span>
-                        </div>
-                        <div className="flex-1 text-center py-1.5 bg-red-50 rounded-lg">
-                            <span className="block text-sm font-bold text-red-600">{tempoData.stats.joursRougeRestants}</span>
-                            <span className="text-[8px] text-red-500 uppercase">Rouge</span>
-                        </div>
+                <div className="flex gap-1 mt-2 pt-2 border-t border-gray-100">
+                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-sky-50 rounded">
+                        <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                        <span className="text-[10px] font-bold text-sky-700">{tempoData.stats.joursBleuRestants}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-slate-100 rounded">
+                        <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                        <span className="text-[10px] font-bold text-slate-700">{tempoData.stats.joursBlancRestants}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-red-50 rounded">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span className="text-[10px] font-bold text-red-700">{tempoData.stats.joursRougeRestants}</span>
                     </div>
                 </div>
             )}

@@ -2,7 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 
-const { getHourTypeForContract, getTempoInfo } = require("./tempoService");
+const {
+    getHourTypeForContract,
+    getTempoInfo,
+    fetchTempoCalendar,
+} = require("./tempoService");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -432,6 +436,28 @@ app.get("/api/tempo", async (req, res) => {
         });
     } catch (err) {
         console.error("[API] Error in /api/tempo:", err);
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/tempo/calendar?year=2025&month=11
+ * Retourne le calendrier Tempo du mois
+ */
+app.get("/api/tempo/calendar", async (req, res) => {
+    try {
+        const now = new Date();
+        const year = parseInt(req.query.year) || now.getFullYear();
+        const month = parseInt(req.query.month) || now.getMonth() + 1;
+
+        const calendar = await fetchTempoCalendar(year, month);
+
+        res.json({
+            ok: true,
+            ...calendar,
+        });
+    } catch (err) {
+        console.error("[API] Error in /api/tempo/calendar:", err);
         res.status(500).json({ ok: false, error: err.message });
     }
 });

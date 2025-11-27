@@ -258,10 +258,79 @@ async function getHourTypeForContract(contractRow, referenceDate = new Date()) {
     return null;
 }
 
+/**
+ * Récupère l'historique des couleurs Tempo pour un mois donné
+ */
+async function fetchTempoCalendar(year, month) {
+    try {
+        // Construire les dates du mois
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0); // Dernier jour du mois
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const days = [];
+        
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const dayData = {
+                date: dateStr,
+                day: d.getDate(),
+                dayOfWeek: d.getDay(), // 0 = dimanche
+                isToday: d.getTime() === today.getTime(),
+                isFuture: d > today,
+                color: null,
+            };
+
+            // Pour les jours passés et aujourd'hui, récupérer la couleur
+            if (!dayData.isFuture || dayData.isToday) {
+                try {
+                    const response = await fetch(`${TEMPO_API_BASE}/jourTempo/${dateStr}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        dayData.color = normalizeColor(data?.couleur) || 
+                                       normalizeColor(data?.couleurJour) ||
+                                       normalizeColor(data?.jourTempo?.couleur);
+                    }
+                } catch (e) {
+                    // Ignorer les erreurs pour un jour spécifique
+                }
+            }
+
+            // Pour demain
+            if (d.getTime() === today.getTime() + 86400000) {
+                try {
+                    const response = await fetch(`${TEMPO_API_BASE}/jourTempo/tomorrow`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        dayData.color = normalizeColor(data?.couleur) || 
+                                       normalizeColor(data?.couleurJour) ||
+                                       normalizeColor(data?.jourTempo?.couleur);
+                    }
+                } catch (e) {
+                    // Couleur de demain pas encore connue
+                }
+            }
+
+            days.push(dayData);
+        }
+
+        return {
+            year,
+            month,
+            days,
+        };
+    } catch (error) {
+        console.error("[TempoService] fetchTempoCalendar error:", error);
+        return null;
+    }
+}
+
 module.exports = {
     getHourTypeForContract,
     getTempoInfo,
     fetchTempoColor,
     fetchTempoNow,
     fetchTempoStats,
+    fetchTempoCalendar,
 };

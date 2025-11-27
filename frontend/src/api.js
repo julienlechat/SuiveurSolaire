@@ -32,3 +32,10 @@ export async function fetchTempo() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
 }
+
+export async function fetchTempoCalendar(year, month) {
+    const url = `${API_BASE}/api/tempo/calendar?year=${year}&month=${month}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+}
