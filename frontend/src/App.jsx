@@ -136,10 +136,10 @@ function App() {
                                 loading={loadingGraph} 
                             />
 
-                            {/* Grille principale */}
+                            {/* Grille principale - hauteur alignée */}
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                                 {/* Graphique (3 colonnes) */}
-                                <div className="lg:col-span-3">
+                                <div className="lg:col-span-3 min-h-[400px] lg:min-h-0">
                                     <PowerChart 
                                         measurements={graphData?.measurements}
                                         loading={loadingGraph}
@@ -175,7 +175,7 @@ function App() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                                     {points.map((p, index) => (
                                         <PointCard
                                             key={p.point_id}

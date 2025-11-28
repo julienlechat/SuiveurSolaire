@@ -19,7 +19,9 @@ export default function Header({
 
     // Date d'aujourd'hui et d'hier au format YYYY-MM-DD
     const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000)
+        .toISOString()
+        .split("T")[0];
 
     const isToday = selectedDate === today;
     const isYesterday = selectedDate === yesterday;
@@ -44,7 +46,9 @@ export default function Header({
                         <rect x="14" y="14" width="7" height="7" rx="1" />
                     </svg>
                     <div>
-                        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+                        <h2 className="text-base font-semibold text-gray-900">
+                            {title}
+                        </h2>
                         {lastUpdate && (
                             <p className="text-xs text-gray-500">
                                 Mis à jour à {formatTime(lastUpdate)}
@@ -81,13 +85,18 @@ export default function Header({
                     </svg>
 
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            {title}
+                        </h2>
                         <p className="text-sm text-gray-600">
-                            {subtitle || "Suivi énergétique de votre installation"}
+                            {subtitle ||
+                                "Suivi énergétique de votre installation"}
                             {lastUpdate && (
                                 <>
                                     <span className="mx-1">•</span>
-                                    <span>Mis à jour à {formatTime(lastUpdate)}</span>
+                                    <span>
+                                        Mis à jour à {formatTime(lastUpdate)}
+                                    </span>
                                 </>
                             )}
                         </p>
@@ -100,9 +109,10 @@ export default function Header({
                         onClick={() => onDateChange?.(today)}
                         className={`
                             px-4 py-2 text-sm font-medium rounded-lg transition-all
-                            ${isToday
-                                ? "bg-neutral-800 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
+                            ${
+                                isToday
+                                    ? "bg-neutral-800 text-white shadow-md"
+                                    : "text-gray-600 hover:bg-gray-100"
                             }
                         `}
                     >
@@ -113,9 +123,10 @@ export default function Header({
                         onClick={() => onDateChange?.(yesterday)}
                         className={`
                             px-4 py-2 text-sm font-medium rounded-lg transition-all
-                            ${isYesterday
-                                ? "bg-neutral-800 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-100"
+                            ${
+                                isYesterday
+                                    ? "bg-neutral-800 text-white shadow-md"
+                                    : "text-gray-600 hover:bg-gray-100"
                             }
                         `}
                     >

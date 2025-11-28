@@ -100,23 +100,26 @@ export default function PowerChart({ measurements, loading }) {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 h-full animate-pulse">
                 <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
-                <div className="h-64 bg-slate-100 rounded"></div>
+                <div className="flex-1 min-h-[250px] bg-slate-100 rounded"></div>
             </div>
         );
     }
 
     if (!chartData) {
         return (
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 h-full flex flex-col">
                 <div className="flex items-center gap-2 mb-4">
-                    <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <span className="font-semibold text-gray-900">Évolution sur 24h</span>
+                    <div className="p-1.5 rounded-lg bg-indigo-50">
+                        <svg className="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 17l4-4 4 4 4-8 6 8" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21H3V3" />
+                        </svg>
+                    </div>
+                    <span className="font-semibold text-gray-900 text-sm">Évolution sur 24h</span>
                 </div>
-                <div className="h-64 flex items-center justify-center text-gray-400">
+                <div className="flex-1 min-h-[250px] flex items-center justify-center text-gray-400 text-sm">
                     Aucune donnée disponible pour cette date
                 </div>
             </div>
@@ -196,7 +199,7 @@ export default function PowerChart({ measurements, loading }) {
     };
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-indigo-50">
@@ -214,7 +217,7 @@ export default function PowerChart({ measurements, loading }) {
                     {measurements?.length || 0} mesures
                 </span>
             </div>
-            <div className="h-72">
+            <div className="flex-1 min-h-[250px]">
                 <Line data={chartData} options={options} />
             </div>
         </div>
