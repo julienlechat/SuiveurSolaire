@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 // SVG Soleil (logo)
 const SunIcon = () => (
@@ -37,16 +38,19 @@ const CloseIcon = () => (
 );
 
 const menuItems = [
-    { id: "dashboard", label: "Tableau de bord", icon: <HomeIcon /> },
-    { id: "settings", label: "Réglages", icon: <SettingsIcon /> },
+    { path: "/", label: "Tableau de bord", icon: <HomeIcon /> },
+    { path: "/settings", label: "Réglages", icon: <SettingsIcon /> },
 ];
 
-export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
+export default function Sidebar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const location = useLocation();
 
-    const handleNavigate = (pageId) => {
-        onNavigate?.(pageId);
-        setMobileMenuOpen(false);
+    const isActive = (path) => {
+        if (path === "/") {
+            return location.pathname === "/" || location.pathname === "/dashboard";
+        }
+        return location.pathname === path;
     };
 
     // Logo complet
@@ -56,49 +60,36 @@ export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
                 <SunIcon />
             </span>
             {!collapsed && (
-                <>
-                    <span className="font-bold text-2xl">SuiveurEnergie</span>
-                </>
+                <span className="font-bold text-2xl">SuiveurEnergie</span>
             )}
         </div>
     );
 
-    // Item de menu
+    // Item de menu avec Link
     const MenuItem = ({ item, collapsed = false }) => {
-        const isActive = currentPage === item.id;
+        const active = isActive(item.path);
         
-        if (isActive) {
-            return (
-                <button
-                    onClick={() => handleNavigate(item.id)}
-                    className={`
-                        flex items-center w-full space-x-3 p-3 bg-white rounded-xl 
-                        text-neutral-800 cursor-pointer
-                        ${collapsed ? "justify-center" : ""}
-                    `}
-                    title={collapsed ? item.label : undefined}
-                >
-                    {item.icon}
-                    {!collapsed && <span className="text-xs font-medium">{item.label}</span>}
-                </button>
-            );
-        }
-
         return (
-            <button
-                onClick={() => handleNavigate(item.id)}
+            <Link
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
                 className={`
-                    flex items-center w-full space-x-3 p-3 rounded-xl 
-                    text-neutral-300 font-medium 
-                    hover:text-white hover:font-bold hover:cursor-pointer
-                    transition-colors
+                    flex items-center w-full space-x-3 p-3 rounded-xl transition-colors
                     ${collapsed ? "justify-center" : ""}
+                    ${active 
+                        ? "bg-white text-neutral-800" 
+                        : "text-neutral-300 font-medium hover:text-white hover:bg-neutral-700"
+                    }
                 `}
                 title={collapsed ? item.label : undefined}
             >
                 {item.icon}
-                {!collapsed && <span className="text-xs">{item.label}</span>}
-            </button>
+                {!collapsed && (
+                    <span className={`text-xs ${active ? "font-medium" : ""}`}>
+                        {item.label}
+                    </span>
+                )}
+            </Link>
         );
     };
 
@@ -114,7 +105,7 @@ export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
                 {/* Navigation */}
                 <nav className="flex flex-col gap-4 flex-1 mt-12 px-5">
                     {menuItems.map((item) => (
-                        <MenuItem key={item.id} item={item} />
+                        <MenuItem key={item.path} item={item} />
                     ))}
                 </nav>
 
@@ -136,7 +127,7 @@ export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
                 {/* Navigation icônes */}
                 <nav className="flex flex-col gap-4 flex-1 mt-12 px-2">
                     {menuItems.map((item) => (
-                        <MenuItem key={item.id} item={item} collapsed />
+                        <MenuItem key={item.path} item={item} collapsed />
                     ))}
                 </nav>
             </aside>
@@ -144,12 +135,12 @@ export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
             {/* ====== NAVBAR MOBILE (sm) ====== */}
             <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-neutral-800">
                 <div className="flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-2 text-white">
+                    <Link to="/" className="flex items-center gap-2 text-white">
                         <span className="text-yellow-400">
                             <SunIcon />
                         </span>
                         <span className="font-bold text-lg">SuiveurEnergie</span>
-                    </div>
+                    </Link>
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         className="p-2 rounded-lg text-neutral-300 hover:text-white hover:bg-neutral-700 transition-colors"
@@ -163,7 +154,7 @@ export default function Sidebar({ currentPage = "dashboard", onNavigate }) {
                     <nav className="px-4 pb-4 space-y-2 border-t border-neutral-700">
                         <div className="pt-3">
                             {menuItems.map((item) => (
-                                <MenuItem key={item.id} item={item} />
+                                <MenuItem key={item.path} item={item} />
                             ))}
                         </div>
                     </nav>
