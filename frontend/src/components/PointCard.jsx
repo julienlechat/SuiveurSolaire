@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 // Couleurs pour les numéros de points (style KPI : fond clair + texte foncé)
 const POINT_COLORS = [
     { bg: "bg-blue-100", text: "text-blue-600" },
@@ -8,10 +6,8 @@ const POINT_COLORS = [
     { bg: "bg-purple-100", text: "text-purple-600" },
 ];
 
-// Carte d'un point de mesure (collapsible)
-export default function PointCard({ point, stats, index = 0 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    
+// Carte d'un point de mesure (collapsible, état géré par parent)
+export default function PointCard({ point, stats, index = 0, isExpanded = false, onToggle }) {
     const power = Number(point?.power_w) || 0;
     const voltage = Number(point?.voltage_v) || 0;
     const current = Number(point?.current_a) || 0;
@@ -55,7 +51,7 @@ export default function PointCard({ point, stats, index = 0 }) {
             unit: "W",
             icon: (
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0 4 3 6 0" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" />
                 </svg>
             ),
             color: "text-blue-500",
@@ -73,6 +69,30 @@ export default function PointCard({ point, stats, index = 0 }) {
             color: "text-purple-500",
             bg: "bg-purple-50",
         },
+        {
+            label: "Tension",
+            value: voltage.toFixed(0),
+            unit: "V",
+            icon: (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M5.5 8h13M6 8v5a6 6 0 0012 0V8" />
+                </svg>
+            ),
+            color: "text-slate-500",
+            bg: "bg-slate-50",
+        },
+        {
+            label: "Courant",
+            value: current.toFixed(2),
+            unit: "A",
+            icon: (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            ),
+            color: "text-amber-500",
+            bg: "bg-amber-50",
+        },
     ];
 
     return (
@@ -80,7 +100,7 @@ export default function PointCard({ point, stats, index = 0 }) {
             {/* Header cliquable */}
             <div 
                 className="flex items-center justify-between p-4 cursor-pointer"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={onToggle}
             >
                 <div className="flex items-center gap-3">
                     <div className={`w-7 h-7 rounded-lg ${pointColor.bg} ${pointColor.text} flex items-center justify-center text-sm font-bold`}>
@@ -94,58 +114,42 @@ export default function PointCard({ point, stats, index = 0 }) {
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                        M{point?.module} Ch.{point?.channel}
-                    </span>
-                    <svg 
-                        className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </div>
+                <svg 
+                    className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
             </div>
 
             {/* Contenu dépliable */}
             {isExpanded && (
                 <div className="px-4 pb-4 border-t border-gray-100">
-                    {/* Métriques journalières */}
-                    <div className="space-y-2 py-3">
+                    {/* Module/Channel info */}
+                    <div className="py-2 mb-2">
+                        <span className="text-[10px] text-gray-400">
+                            Module {point?.module} • Channel {point?.channel}
+                        </span>
+                    </div>
+                    
+                    {/* Métriques - grille 2 colonnes */}
+                    <div className="grid grid-cols-2 gap-2">
                         {metrics.map((m, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-gray-50">
+                                <div className="flex items-center gap-1.5">
                                     <div className={`p-1 rounded ${m.bg} ${m.color}`}>
                                         {m.icon}
                                     </div>
-                                    <span className="text-xs text-gray-600">{m.label}</span>
+                                    <span className="text-[10px] text-gray-500">{m.label}</span>
                                 </div>
                                 <div className="flex items-baseline gap-0.5">
-                                    <span className="text-sm font-semibold text-gray-900">{m.value}</span>
-                                    <span className="text-[10px] text-gray-400">{m.unit}</span>
+                                    <span className="text-xs font-semibold text-gray-900">{m.value}</span>
+                                    <span className="text-[9px] text-gray-400">{m.unit}</span>
                                 </div>
                             </div>
                         ))}
-                    </div>
-
-                    {/* Footer - Mesures électriques */}
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                        <div className="flex-1 flex items-center gap-1.5 bg-blue-50 rounded-lg px-2 py-1.5">
-                            <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M5.5 8h13M6 8v5a6 6 0 0012 0V8" />
-                            </svg>
-                            <span className="text-xs font-medium text-gray-700">{voltage.toFixed(0)}</span>
-                            <span className="text-[9px] text-gray-400">V</span>
-                        </div>
-                        <div className="flex-1 flex items-center gap-1.5 bg-amber-50 rounded-lg px-2 py-1.5">
-                            <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            <span className="text-xs font-medium text-gray-700">{current.toFixed(2)}</span>
-                            <span className="text-[9px] text-gray-400">A</span>
-                        </div>
                     </div>
                 </div>
             )}

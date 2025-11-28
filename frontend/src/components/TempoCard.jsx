@@ -1,22 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
 
-// Carte Tempo EDF avec calendrier mensuel
+// Quotas Tempo par saison
+const TEMPO_QUOTAS = { BLEU: 300, BLANC: 43, ROUGE: 22 };
+
+// Carte Tempo EDF avec calendrier mensuel et stats saison
 export default function TempoCard({ tempoData, loading }) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [monthColors, setMonthColors] = useState({});
     const [todayColorDirect, setTodayColorDirect] = useState(null);
     const [tomorrowColorDirect, setTomorrowColorDirect] = useState(null);
+    const [seasonStats, setSeasonStats] = useState(null);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
-    // Charger aujourd'hui et demain directement depuis l'API
+    // Charger aujourd'hui et demain
     useEffect(() => {
         async function loadTodayTomorrow() {
             try {
-                // Aujourd'hui
                 const todayRes = await fetch("https://www.api-couleur-tempo.fr/api/jourTempo/today");
                 if (todayRes.ok) {
                     const data = await todayRes.json();
@@ -28,7 +31,6 @@ export default function TempoCard({ tempoData, loading }) {
             }
             
             try {
-                // Demain
                 const tomorrowRes = await fetch("https://www.api-couleur-tempo.fr/api/jourTempo/tomorrow");
                 if (tomorrowRes.ok) {
                     const data = await tomorrowRes.json();
@@ -36,47 +38,81 @@ export default function TempoCard({ tempoData, loading }) {
                     if (couleur) setTomorrowColorDirect(couleur.toUpperCase());
                 }
             } catch (e) {
-                // Demain pas encore disponible (avant 11h)
+                // Demain pas encore disponible
             }
         }
         loadTodayTomorrow();
     }, []);
 
-    // Charger les couleurs du mois
+    // Charger couleurs du mois + stats saison
     useEffect(() => {
-        async function loadMonthColors() {
+        async function loadData() {
             try {
+                // Déterminer la période courante (sept-août)
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = today.getMonth();
-                const colors = {};
-
-                // Charger les jours du mois (du 1er jusqu'à aujourd'hui + demain si dispo)
-                const lastDay = new Date(year, month + 1, 0).getDate();
                 
-                for (let day = 1; day <= Math.min(today.getDate() + 1, lastDay); day++) {
-                    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                    try {
-                        const res = await fetch(`https://www.api-couleur-tempo.fr/api/jourTempo/${dateStr}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            const couleur = data?.libCouleur || data?.couleur;
-                            if (couleur) {
-                                colors[day] = couleur.toUpperCase();
-                            }
-                        }
-                    } catch (e) {
-                        // Ignorer les erreurs pour les jours individuels
-                    }
+                let seasonStart, seasonEnd, periodStr;
+                if (month >= 8) { // Sept-Déc
+                    seasonStart = `${year}-09-01`;
+                    seasonEnd = `${year + 1}-08-31`;
+                    periodStr = `${year}-${year + 1}`;
+                } else { // Jan-Août
+                    seasonStart = `${year - 1}-09-01`;
+                    seasonEnd = `${year}-08-31`;
+                    periodStr = `${year - 1}-${year}`;
                 }
+
+                // Charger tous les jours Tempo
+                const res = await fetch("https://www.api-couleur-tempo.fr/api/joursTempo");
+                if (!res.ok) throw new Error("API error");
+                
+                const allDays = await res.json();
+                
+                // Filtrer pour la saison courante
+                const seasonDays = allDays.filter(d => d.periode === periodStr);
+                
+                // Compter les jours par couleur
+                const counts = { BLEU: 0, BLANC: 0, ROUGE: 0 };
+                seasonDays.forEach(d => {
+                    const color = (d.libCouleur || "").toUpperCase();
+                    if (color.includes("BLEU")) counts.BLEU++;
+                    else if (color.includes("BLANC")) counts.BLANC++;
+                    else if (color.includes("ROUGE")) counts.ROUGE++;
+                });
+                
+                setSeasonStats({
+                    periode: periodStr,
+                    bleuConsommes: counts.BLEU,
+                    blancConsommes: counts.BLANC,
+                    rougeConsommes: counts.ROUGE,
+                    bleuRestants: Math.max(0, TEMPO_QUOTAS.BLEU - counts.BLEU),
+                    blancRestants: Math.max(0, TEMPO_QUOTAS.BLANC - counts.BLANC),
+                    rougeRestants: Math.max(0, TEMPO_QUOTAS.ROUGE - counts.ROUGE),
+                });
+
+                // Charger les couleurs du mois pour le calendrier
+                const colors = {};
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const monthDays = allDays.filter(d => {
+                    const date = new Date(d.dateJour);
+                    return date.getFullYear() === year && date.getMonth() === month;
+                });
+                
+                monthDays.forEach(d => {
+                    const day = new Date(d.dateJour).getDate();
+                    const couleur = (d.libCouleur || "").toUpperCase();
+                    if (couleur) colors[day] = couleur;
+                });
                 
                 setMonthColors(colors);
             } catch (e) {
-                console.error("Error loading month colors:", e);
+                console.error("Error loading Tempo data:", e);
             }
         }
 
-        loadMonthColors();
+        loadData();
     }, []);
 
     // Générer le calendrier du mois
@@ -88,7 +124,6 @@ export default function TempoCard({ tempoData, loading }) {
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
         
-        // Jour de la semaine du 1er (0 = dimanche, on veut lundi = 0)
         let startDay = firstDay.getDay() - 1;
         if (startDay < 0) startDay = 6;
 
@@ -103,7 +138,6 @@ export default function TempoCard({ tempoData, loading }) {
             }
         }
         
-        // Compléter la dernière semaine
         if (currentWeek.length > 0) {
             while (currentWeek.length < 7) {
                 currentWeek.push(null);
@@ -145,29 +179,25 @@ export default function TempoCard({ tempoData, loading }) {
         ROUGE: { bg: "bg-red-500", light: "bg-red-100", text: "text-red-700", label: "Rouge" },
     };
 
-    // Utiliser les couleurs directes de l'API, sinon fallback sur tempoData du backend
     const todayColor = todayColorDirect || tempoData?.todayColor;
     const tomorrowColor = tomorrowColorDirect || tempoData?.tomorrowColor;
     
     const today = todayColor ? colorConfig[todayColor] : null;
     const tomorrow = tomorrowColor ? colorConfig[tomorrowColor] : null;
 
-    // Position actuelle et type de période
     const currentHour = currentTime.getHours();
     const currentMinute = currentTime.getMinutes();
     const position = ((currentHour * 60 + currentMinute) / (24 * 60)) * 100;
     
-    // HP: 6h-22h, HC: reste
     const hpStart = 6, hpEnd = 22;
     const isInHP = currentHour >= hpStart && currentHour < hpEnd;
 
-    // Nom du mois
     const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
                         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-4 h-full flex flex-col">
-            {/* Header avec icône style KPI */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-amber-50">
@@ -216,23 +246,18 @@ export default function TempoCard({ tempoData, loading }) {
                 </div>
             </div>
 
-            {/* Timeline HP/HC avec couleurs claires */}
+            {/* Timeline HP/HC */}
             <div className="mb-3">
                 <div className="relative h-4 rounded-full overflow-hidden flex">
-                    {/* HC matin (0h-6h) */}
                     <div className="bg-emerald-100" style={{ width: `${(hpStart/24)*100}%` }} />
-                    {/* HP (6h-22h) */}
                     <div className="bg-amber-100" style={{ width: `${((hpEnd-hpStart)/24)*100}%` }} />
-                    {/* HC soir (22h-24h) */}
                     <div className="bg-emerald-100" style={{ width: `${((24-hpEnd)/24)*100}%` }} />
                     
-                    {/* Curseur dynamique */}
                     <div 
                         className={`absolute top-0 bottom-0 w-1 rounded-full ${isInHP ? "bg-amber-500" : "bg-emerald-500"}`}
                         style={{ left: `calc(${position}% - 2px)` }}
                     />
                 </div>
-                {/* Labels */}
                 <div className="flex justify-between mt-0.5 text-[8px] text-gray-400">
                     <span>0h</span>
                     <span>6h</span>
@@ -248,7 +273,6 @@ export default function TempoCard({ tempoData, loading }) {
                     {monthNames[calendar.month]} {calendar.year}
                 </p>
                 
-                {/* Jours de la semaine */}
                 <div className="grid grid-cols-7 gap-0.5 mb-1">
                     {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
                         <div key={i} className="text-[8px] text-gray-400 text-center font-medium">
@@ -257,7 +281,6 @@ export default function TempoCard({ tempoData, loading }) {
                     ))}
                 </div>
 
-                {/* Grille des jours - responsive */}
                 <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                     {calendar.weeks.flat().map((day, i) => {
                         if (!day) return <div key={i} />;
@@ -265,7 +288,6 @@ export default function TempoCard({ tempoData, loading }) {
                         const color = monthColors[day];
                         const isToday = day === calendar.today;
                         const isPast = day < calendar.today;
-                        const isTomorrow = day === calendar.today + 1;
 
                         let bgClass = "";
                         let textClass = "text-gray-400";
@@ -282,11 +304,9 @@ export default function TempoCard({ tempoData, loading }) {
                                 textClass = "text-white";
                             }
                         } else if (isPast) {
-                            // Jours passés sans couleur connue
                             bgClass = "bg-gray-100";
                             textClass = "text-gray-500";
                         } else {
-                            // Jours futurs sans info
                             textClass = "text-gray-300";
                         }
 
@@ -307,34 +327,32 @@ export default function TempoCard({ tempoData, loading }) {
                 </div>
             </div>
 
-            {/* Stats du mois depuis le calendrier local */}
-            {Object.keys(monthColors).length > 0 && (
-                <div className="flex gap-1.5 mt-2 pt-2 border-t border-gray-100">
-                    {(() => {
-                        // Calculer les jours par couleur depuis monthColors
-                        const counts = { BLEU: 0, BLANC: 0, ROUGE: 0 };
-                        Object.values(monthColors).forEach(c => {
-                            if (c.includes("BLEU")) counts.BLEU++;
-                            else if (c.includes("BLANC")) counts.BLANC++;
-                            else if (c.includes("ROUGE")) counts.ROUGE++;
-                        });
-                        return (
-                            <>
-                                <div className="flex-1 flex flex-col items-center py-1.5 bg-sky-50 rounded">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 mb-0.5"></span>
-                                    <span className="text-[10px] font-bold text-sky-700">{counts.BLEU}</span>
-                                </div>
-                                <div className="flex-1 flex flex-col items-center py-1.5 bg-gray-50 rounded border border-gray-200">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400 mb-0.5"></span>
-                                    <span className="text-[10px] font-bold text-gray-700">{counts.BLANC}</span>
-                                </div>
-                                <div className="flex-1 flex flex-col items-center py-1.5 bg-red-50 rounded">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 mb-0.5"></span>
-                                    <span className="text-[10px] font-bold text-red-700">{counts.ROUGE}</span>
-                                </div>
-                            </>
-                        );
-                    })()}
+            {/* Stats saison (sept-août) */}
+            {seasonStats && (
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                    <p className="text-[8px] text-gray-400 text-center mb-1.5">
+                        Saison {seasonStats.periode}
+                    </p>
+                    <div className="flex gap-1.5">
+                        <div className="flex-1 flex flex-col items-center py-1.5 bg-sky-50 rounded">
+                            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 mb-0.5"></span>
+                            <span className="text-[10px] font-bold text-sky-700">
+                                {seasonStats.bleuConsommes}/{TEMPO_QUOTAS.BLEU}
+                            </span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center py-1.5 bg-gray-50 rounded border border-gray-200">
+                            <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400 mb-0.5"></span>
+                            <span className="text-[10px] font-bold text-gray-700">
+                                {seasonStats.blancConsommes}/{TEMPO_QUOTAS.BLANC}
+                            </span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center py-1.5 bg-red-50 rounded">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500 mb-0.5"></span>
+                            <span className="text-[10px] font-bold text-red-700">
+                                {seasonStats.rougeConsommes}/{TEMPO_QUOTAS.ROUGE}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

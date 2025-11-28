@@ -33,6 +33,9 @@ function App() {
     // Données Tempo
     const [tempoData, setTempoData] = useState(null);
     const [loadingTempo, setLoadingTempo] = useState(true);
+    
+    // État des cards dépliées (Set d'IDs)
+    const [expandedPoints, setExpandedPoints] = useState(new Set());
 
     // Chargement des données temps réel
     useEffect(() => {
@@ -181,6 +184,18 @@ function App() {
                                                 (s) => s.point_id === p.point_id
                                             )}
                                             index={index}
+                                            isExpanded={expandedPoints.has(p.point_id)}
+                                            onToggle={() => {
+                                                setExpandedPoints(prev => {
+                                                    const next = new Set(prev);
+                                                    if (next.has(p.point_id)) {
+                                                        next.delete(p.point_id);
+                                                    } else {
+                                                        next.add(p.point_id);
+                                                    }
+                                                    return next;
+                                                });
+                                            }}
                                         />
                                     ))}
                                 </div>
