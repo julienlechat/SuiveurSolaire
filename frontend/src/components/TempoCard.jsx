@@ -307,20 +307,26 @@ export default function TempoCard({ tempoData, loading }) {
                 </div>
             </div>
 
-            {/* Jours restants compact */}
-            {tempoData.stats && (
-                <div className="flex gap-1 mt-2 pt-2 border-t border-gray-100">
-                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-sky-50 rounded">
-                        <span className="w-2 h-2 rounded-full bg-sky-500"></span>
-                        <span className="text-[10px] font-bold text-sky-700">{tempoData.stats.joursBleuRestants}</span>
+            {/* Jours consommés / total */}
+            {tempoData?.stats && (
+                <div className="flex gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                    <div className="flex-1 flex flex-col items-center py-1.5 bg-sky-50 rounded">
+                        <span className="w-2.5 h-2.5 rounded-full bg-sky-500 mb-0.5"></span>
+                        <span className="text-[10px] font-bold text-sky-700">
+                            {tempoData.stats.joursBleuConsommes || 0}/{(tempoData.stats.joursBleuConsommes || 0) + (tempoData.stats.joursBleuRestants || 0)}
+                        </span>
                     </div>
-                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-gray-50 rounded border border-gray-200">
-                        <span className="w-2 h-2 rounded-full bg-white border border-gray-400"></span>
-                        <span className="text-[10px] font-bold text-gray-700">{tempoData.stats.joursBlancRestants}</span>
+                    <div className="flex-1 flex flex-col items-center py-1.5 bg-gray-50 rounded border border-gray-200">
+                        <span className="w-2.5 h-2.5 rounded-full bg-white border border-gray-400 mb-0.5"></span>
+                        <span className="text-[10px] font-bold text-gray-700">
+                            {tempoData.stats.joursBlancConsommes || 0}/{(tempoData.stats.joursBlancConsommes || 0) + (tempoData.stats.joursBlancRestants || 0)}
+                        </span>
                     </div>
-                    <div className="flex-1 flex items-center justify-center gap-1 py-1 bg-red-50 rounded">
-                        <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                        <span className="text-[10px] font-bold text-red-700">{tempoData.stats.joursRougeRestants}</span>
+                    <div className="flex-1 flex flex-col items-center py-1.5 bg-red-50 rounded">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 mb-0.5"></span>
+                        <span className="text-[10px] font-bold text-red-700">
+                            {tempoData.stats.joursRougeConsommes || 0}/{(tempoData.stats.joursRougeConsommes || 0) + (tempoData.stats.joursRougeRestants || 0)}
+                        </span>
                     </div>
                 </div>
             )}

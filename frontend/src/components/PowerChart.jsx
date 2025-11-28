@@ -135,10 +135,11 @@ export default function PowerChart({ measurements, loading }) {
                 position: "top",
                 align: "end",
                 labels: {
-                    usePointStyle: false,
-                    boxWidth: 12,
-                    boxHeight: 3,
-                    padding: 12,
+                    usePointStyle: true,
+                    pointStyle: "line",
+                    boxWidth: 20,
+                    boxHeight: 2,
+                    padding: 15,
                     font: { size: 11 },
                     color: "#64748b",
                 },
@@ -198,14 +199,15 @@ export default function PowerChart({ measurements, loading }) {
         <div className="bg-white rounded-xl border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    <div className="p-1.5 rounded-lg bg-indigo-50">
+                        <svg className="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 17l4-4 4 4 4-8 6 8" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21H3V3" />
+                        </svg>
+                    </div>
                     <div>
-                        <span className="font-semibold text-gray-900">Évolution sur 24h</span>
-                        <span className="text-xs text-gray-400 ml-2">
-                            Puissance par point de mesure
-                        </span>
+                        <span className="font-semibold text-gray-900 text-sm">Évolution sur 24h</span>
+                        <p className="text-[10px] text-gray-400">Puissance par point de mesure</p>
                     </div>
                 </div>
                 <span className="text-xs text-gray-400">

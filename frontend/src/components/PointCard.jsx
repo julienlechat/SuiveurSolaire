@@ -1,5 +1,13 @@
+// Couleurs pour les numéros de points
+const POINT_COLORS = [
+    { bg: "bg-blue-500", text: "text-white" },
+    { bg: "bg-rose-500", text: "text-white" },
+    { bg: "bg-emerald-500", text: "text-white" },
+    { bg: "bg-purple-500", text: "text-white" },
+];
+
 // Carte d'un point de mesure
-export default function PointCard({ point, stats }) {
+export default function PointCard({ point, stats, index = 0 }) {
     const power = Number(point?.power_w) || 0;
     const voltage = Number(point?.voltage_v) || 0;
     const current = Number(point?.current_a) || 0;
@@ -9,6 +17,9 @@ export default function PointCard({ point, stats }) {
     const produced = Number(stats?.export_kwh) || 0;
     const avgPower = Number(stats?.avg_power) || 0;
     const maxPower = Number(stats?.max_power) || 0;
+    
+    // Couleur basée sur l'index
+    const pointColor = POINT_COLORS[index % POINT_COLORS.length];
 
     const metrics = [
         {
@@ -65,7 +76,12 @@ export default function PointCard({ point, stats }) {
         <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">{point?.point_name || "—"}</h3>
+                <div className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-lg ${pointColor.bg} ${pointColor.text} flex items-center justify-center text-xs font-bold`}>
+                        {index + 1}
+                    </div>
+                    <h3 className="font-semibold text-gray-900 text-sm">{point?.point_name || "—"}</h3>
+                </div>
                 <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
                     M{point?.module} Ch.{point?.channel}
                 </span>
