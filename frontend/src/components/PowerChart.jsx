@@ -136,9 +136,9 @@ export default function PowerChart({ measurements, loading }) {
                 align: "end",
                 labels: {
                     usePointStyle: true,
-                    pointStyle: "line",
-                    boxWidth: 20,
-                    boxHeight: 2,
+                    pointStyle: "circle",
+                    boxWidth: 8,
+                    boxHeight: 8,
                     padding: 15,
                     font: { size: 11 },
                     color: "#64748b",

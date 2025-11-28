@@ -1,17 +1,20 @@
-// Couleurs pour les numéros de points
+import { useState } from "react";
+
+// Couleurs pour les numéros de points (style KPI : fond clair + texte foncé)
 const POINT_COLORS = [
-    { bg: "bg-blue-500", text: "text-white" },
-    { bg: "bg-rose-500", text: "text-white" },
-    { bg: "bg-emerald-500", text: "text-white" },
-    { bg: "bg-purple-500", text: "text-white" },
+    { bg: "bg-blue-100", text: "text-blue-600" },
+    { bg: "bg-rose-100", text: "text-rose-600" },
+    { bg: "bg-emerald-100", text: "text-emerald-600" },
+    { bg: "bg-purple-100", text: "text-purple-600" },
 ];
 
-// Carte d'un point de mesure
+// Carte d'un point de mesure (collapsible)
 export default function PointCard({ point, stats, index = 0 }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
     const power = Number(point?.power_w) || 0;
     const voltage = Number(point?.voltage_v) || 0;
     const current = Number(point?.current_a) || 0;
-    const powerFactor = Number(point?.power_factor) || 0;
     
     const consumed = Number(stats?.import_kwh) || 0;
     const produced = Number(stats?.export_kwh) || 0;
@@ -73,65 +76,79 @@ export default function PointCard({ point, stats, index = 0 }) {
     ];
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-lg ${pointColor.bg} ${pointColor.text} flex items-center justify-center text-xs font-bold`}>
+        <div className="bg-white rounded-xl border border-slate-200 hover:shadow-md transition-shadow">
+            {/* Header cliquable */}
+            <div 
+                className="flex items-center justify-between p-4 cursor-pointer"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="flex items-center gap-3">
+                    <div className={`w-7 h-7 rounded-lg ${pointColor.bg} ${pointColor.text} flex items-center justify-center text-sm font-bold`}>
                         {index + 1}
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-sm">{point?.point_name || "—"}</h3>
-                </div>
-                <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                    M{point?.module} Ch.{point?.channel}
-                </span>
-            </div>
-
-            {/* Puissance actuelle */}
-            <div className="mb-4">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Puissance actuelle</p>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-gray-900">{power.toFixed(0)}</span>
-                    <span className="text-lg text-gray-500">W</span>
-                </div>
-            </div>
-
-            {/* Métriques journalières */}
-            <div className="space-y-2 mb-4">
-                {metrics.map((m, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className={`p-1 rounded ${m.bg} ${m.color}`}>
-                                {m.icon}
-                            </div>
-                            <span className="text-xs text-gray-600">{m.label}</span>
-                        </div>
-                        <div className="flex items-baseline gap-0.5">
-                            <span className="text-sm font-semibold text-gray-900">{m.value}</span>
-                            <span className="text-[10px] text-gray-400">{m.unit}</span>
+                    <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">{point?.point_name || "—"}</h3>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold text-gray-900">{power.toFixed(0)}</span>
+                            <span className="text-sm text-gray-500">W</span>
                         </div>
                     </div>
-                ))}
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                        M{point?.module} Ch.{point?.channel}
+                    </span>
+                    <svg 
+                        className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
             </div>
 
-            {/* Footer - Mesures électriques */}
-            <div className="flex gap-2 pt-3 border-t border-gray-100">
-                <div className="flex-1 flex items-center gap-1.5 bg-blue-50 rounded-lg px-2 py-1.5">
-                    <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M5.5 8h13M6 8v5a6 6 0 0012 0V8" />
-                    </svg>
-                    <span className="text-xs font-medium text-gray-700">{voltage.toFixed(0)}</span>
-                    <span className="text-[9px] text-gray-400">V</span>
+            {/* Contenu dépliable */}
+            {isExpanded && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                    {/* Métriques journalières */}
+                    <div className="space-y-2 py-3">
+                        {metrics.map((m, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className={`p-1 rounded ${m.bg} ${m.color}`}>
+                                        {m.icon}
+                                    </div>
+                                    <span className="text-xs text-gray-600">{m.label}</span>
+                                </div>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className="text-sm font-semibold text-gray-900">{m.value}</span>
+                                    <span className="text-[10px] text-gray-400">{m.unit}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer - Mesures électriques */}
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <div className="flex-1 flex items-center gap-1.5 bg-blue-50 rounded-lg px-2 py-1.5">
+                            <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3M5.5 8h13M6 8v5a6 6 0 0012 0V8" />
+                            </svg>
+                            <span className="text-xs font-medium text-gray-700">{voltage.toFixed(0)}</span>
+                            <span className="text-[9px] text-gray-400">V</span>
+                        </div>
+                        <div className="flex-1 flex items-center gap-1.5 bg-amber-50 rounded-lg px-2 py-1.5">
+                            <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span className="text-xs font-medium text-gray-700">{current.toFixed(2)}</span>
+                            <span className="text-[9px] text-gray-400">A</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex-1 flex items-center gap-1.5 bg-amber-50 rounded-lg px-2 py-1.5">
-                    <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span className="text-xs font-medium text-gray-700">{current.toFixed(2)}</span>
-                    <span className="text-[9px] text-gray-400">A</span>
-                </div>
-            </div>
+            )}
         </div>
     );
 }
-
