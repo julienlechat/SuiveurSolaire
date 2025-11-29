@@ -1,83 +1,58 @@
 import { useEffect, useState, useMemo } from "react";
 import { fetchHistoryGraph } from "../../api";
 
-// Header avec SVG €
+// Header avec SVG € simple
 function PricingHeader() {
     return (
         <header className="bg-white border-b border-slate-200 px-4 md:px-6 lg:px-8 py-4 md:py-5">
             <div className="flex items-center">
                 <div className="p-2 rounded-lg bg-emerald-100 mr-3">
-                    <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.121 15.536c-1.171 1.952-3.07 1.952-4.242 0-1.172-1.953-1.172-5.119 0-7.072 1.171-1.952 3.07-1.952 4.242 0M8 10.5h4m-4 3h4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2v-1.93c-1.86-.36-2.95-1.51-3.26-3.09h1.78c.23.82.88 1.51 2.28 1.51 1.36 0 1.87-.68 1.87-1.36 0-.97-.65-1.3-2.17-1.66-1.69-.39-3.24-.94-3.24-2.94 0-1.33.97-2.54 2.74-2.93V6h2v1.91c1.5.37 2.47 1.4 2.63 2.84h-1.75c-.13-.74-.63-1.34-1.67-1.34-1 0-1.68.48-1.68 1.25 0 .84.65 1.13 2.08 1.47 1.81.42 3.35 1.03 3.35 3.04 0 1.58-1.17 2.6-2.96 2.92z"/>
                     </svg>
                 </div>
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Tarification</h2>
-                    <p className="text-sm text-gray-500">Analyse des coûts et consommation</p>
+                    <h2 className="text-lg font-semibold text-gray-900">Suivi des coûts</h2>
+                    <p className="text-sm text-gray-500">Analyse et comparaison de votre consommation</p>
                 </div>
             </div>
         </header>
     );
 }
 
-// Carte KPI compacte
-function KpiCard({ label, value, unit, subtext, warning, icon, color = "blue" }) {
-    const colors = {
-        blue: { icon: "bg-blue-100 text-blue-600" },
-        emerald: { icon: "bg-emerald-100 text-emerald-600" },
-        amber: { icon: "bg-amber-100 text-amber-600" },
-        rose: { icon: "bg-rose-100 text-rose-600" },
-        purple: { icon: "bg-purple-100 text-purple-600" },
-    };
-    const c = colors[color] || colors.blue;
-
+// Section card avec SVG
+function Section({ icon, title, description, children, className = "" }) {
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg ${c.icon}`}>{icon}</div>
-                <span className="text-xs text-gray-500 font-medium uppercase">{label}</span>
-                {warning && (
-                    <svg className="w-4 h-4 text-amber-500 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                )}
-            </div>
-            <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-gray-900">{value}</span>
-                <span className="text-sm text-gray-500">{unit}</span>
-            </div>
-            {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
-        </div>
-    );
-}
-
-// Section card avec SVG obligatoire
-function Section({ icon, title, description, children, compact = false }) {
-    return (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className={`px-4 ${compact ? "py-3" : "py-4"} border-b border-slate-100 flex items-center gap-2`}>
+        <div className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${className}`}>
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-slate-100 text-slate-600">{icon}</div>
-                <div>
+                <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-                    {description && <p className="text-xs text-gray-500">{description}</p>}
+                    {description && <p className="text-xs text-gray-500 truncate">{description}</p>}
                 </div>
             </div>
-            <div className={compact ? "p-3" : "p-4"}>{children}</div>
+            <div className="p-4">{children}</div>
         </div>
     );
 }
 
-// Tarifs Tempo
-const TEMPO_TARIFS = {
-    bleu: { hc: 0.1296, hp: 0.1609 },
-    blanc: { hc: 0.1486, hp: 0.1894 },
-    rouge: { hc: 0.1568, hp: 0.7562 },
+// Données contrat Tempo
+const CONTRACT = {
+    name: "Tempo",
+    provider: "EDF",
+    startDate: "2024-09-01",
+    subscription: 15.79, // €/mois pour 9kVA
+    hcPeriods: ["22h00 - 06h00"],
+    tarifs: {
+        bleu: { hc: 0.1296, hp: 0.1609 },
+        blanc: { hc: 0.1486, hp: 0.1894 },
+        rouge: { hc: 0.1568, hp: 0.7562 },
+    },
 };
 
 export default function PricingPage() {
     const [loading, setLoading] = useState(true);
     const [seasonStats, setSeasonStats] = useState(null);
-    const [monthData, setMonthData] = useState({ days: [], totalKwh: 0, totalCost: 0, missingDays: 0 });
     const [weekData, setWeekData] = useState({ current: [], previous: [] });
 
     // Charger les données
@@ -85,61 +60,41 @@ export default function PricingPage() {
         async function loadData() {
             try {
                 const today = new Date();
-                const currentYear = today.getFullYear();
-                const currentMonth = today.getMonth();
-                const currentDay = today.getDate();
+                const dayOfWeek = today.getDay() || 7;
 
-                // Charger données du mois (chaque jour)
-                const monthDays = [];
-                let totalKwh = 0;
-                let totalCost = 0;
-                let missingDays = 0;
-
-                for (let d = 1; d <= currentDay; d++) {
-                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-                    try {
-                        const data = await fetchHistoryGraph(dateStr);
-                        if (data.ok && data.stats) {
-                            const dayKwh = Number(data.stats.totalConsumption) || 0;
-                            // Estimation coût (simplifié avec tarif bleu moyen)
-                            const avgPrice = (TEMPO_TARIFS.bleu.hp * 0.6 + TEMPO_TARIFS.bleu.hc * 0.4);
-                            const dayCost = dayKwh * avgPrice;
-                            monthDays.push({ date: dateStr, kwh: dayKwh, cost: dayCost });
-                            totalKwh += dayKwh;
-                            totalCost += dayCost;
-                        } else {
-                            missingDays++;
-                            monthDays.push({ date: dateStr, kwh: 0, cost: 0, missing: true });
-                        }
-                    } catch {
-                        missingDays++;
-                        monthDays.push({ date: dateStr, kwh: 0, cost: 0, missing: true });
-                    }
-                }
-
-                setMonthData({ days: monthDays, totalKwh, totalCost, missingDays, daysCount: currentDay });
-
-                // Charger semaine actuelle vs précédente
+                // Charger semaine actuelle et précédente
                 const currentWeek = [];
                 const previousWeek = [];
-                const dayOfWeek = today.getDay() || 7; // 1=Lundi, 7=Dimanche
+                const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
                 for (let i = 1; i <= 7; i++) {
                     // Semaine actuelle
                     const currentDate = new Date(today);
                     currentDate.setDate(today.getDate() - dayOfWeek + i);
+                    
                     if (currentDate <= today) {
                         const dateStr = currentDate.toISOString().split("T")[0];
                         try {
                             const data = await fetchHistoryGraph(dateStr);
                             if (data.ok && data.stats) {
+                                const kwh = Number(data.stats.totalConsumption) || 0;
+                                // Estimation: 60% HP, 40% HC
+                                const kwhHp = kwh * 0.6;
+                                const kwhHc = kwh * 0.4;
+                                const costHp = kwhHp * CONTRACT.tarifs.bleu.hp;
+                                const costHc = kwhHc * CONTRACT.tarifs.bleu.hc;
                                 currentWeek.push({
-                                    day: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][i - 1],
-                                    kwh: Number(data.stats.totalConsumption) || 0,
-                                    cost: (Number(data.stats.totalConsumption) || 0) * (TEMPO_TARIFS.bleu.hp * 0.6 + TEMPO_TARIFS.bleu.hc * 0.4)
+                                    day: dayNames[i - 1],
+                                    date: dateStr,
+                                    kwh, kwhHp, kwhHc,
+                                    cost: costHp + costHc, costHp, costHc
                                 });
+                            } else {
+                                currentWeek.push({ day: dayNames[i - 1], date: dateStr, kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
                             }
-                        } catch {}
+                        } catch {
+                            currentWeek.push({ day: dayNames[i - 1], date: dateStr, kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
+                        }
                     }
 
                     // Semaine précédente
@@ -149,18 +104,30 @@ export default function PricingPage() {
                     try {
                         const data = await fetchHistoryGraph(prevDateStr);
                         if (data.ok && data.stats) {
+                            const kwh = Number(data.stats.totalConsumption) || 0;
+                            const kwhHp = kwh * 0.6;
+                            const kwhHc = kwh * 0.4;
+                            const costHp = kwhHp * CONTRACT.tarifs.bleu.hp;
+                            const costHc = kwhHc * CONTRACT.tarifs.bleu.hc;
                             previousWeek.push({
-                                day: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"][i - 1],
-                                kwh: Number(data.stats.totalConsumption) || 0,
-                                cost: (Number(data.stats.totalConsumption) || 0) * (TEMPO_TARIFS.bleu.hp * 0.6 + TEMPO_TARIFS.bleu.hc * 0.4)
+                                day: dayNames[i - 1],
+                                date: prevDateStr,
+                                kwh, kwhHp, kwhHc,
+                                cost: costHp + costHc, costHp, costHc
                             });
+                        } else {
+                            previousWeek.push({ day: dayNames[i - 1], date: prevDateStr, kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
                         }
-                    } catch {}
+                    } catch {
+                        previousWeek.push({ day: dayNames[i - 1], date: prevDateStr, kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
+                    }
                 }
 
                 setWeekData({ current: currentWeek, previous: previousWeek });
 
                 // Stats saison Tempo
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
                 let startSeasonYear = currentYear;
                 if (currentMonth < 8) startSeasonYear--;
 
@@ -184,9 +151,6 @@ export default function PricingPage() {
                     setSeasonStats({
                         periode: `${startSeasonYear}-${startSeasonYear + 1}`,
                         bleu, blanc, rouge,
-                        bleuRestant: 300 - bleu,
-                        blancRestant: 43 - blanc,
-                        rougeRestant: 22 - rouge,
                     });
                 }
             } catch (e) {
@@ -199,52 +163,54 @@ export default function PricingPage() {
         loadData();
     }, []);
 
-    // Calculs KPIs
-    const kpis = useMemo(() => {
-        if (!monthData.days.length) return null;
+    // Calculs comparatifs
+    const comparison = useMemo(() => {
+        const currentTotal = weekData.current.reduce((acc, d) => ({ 
+            kwh: acc.kwh + d.kwh, 
+            kwhHp: acc.kwhHp + d.kwhHp,
+            kwhHc: acc.kwhHc + d.kwhHc,
+            cost: acc.cost + d.cost,
+            costHp: acc.costHp + d.costHp,
+            costHc: acc.costHc + d.costHc,
+        }), { kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
+        
+        const previousTotal = weekData.previous.reduce((acc, d) => ({ 
+            kwh: acc.kwh + d.kwh, 
+            kwhHp: acc.kwhHp + d.kwhHp,
+            kwhHc: acc.kwhHc + d.kwhHc,
+            cost: acc.cost + d.cost,
+            costHp: acc.costHp + d.costHp,
+            costHc: acc.costHc + d.costHc,
+        }), { kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
 
-        const avgKwhPerDay = monthData.daysCount > 0 ? monthData.totalKwh / (monthData.daysCount - monthData.missingDays || 1) : 0;
-        const avgCostPerDay = monthData.daysCount > 0 ? monthData.totalCost / (monthData.daysCount - monthData.missingDays || 1) : 0;
+        const kwhDiff = previousTotal.kwh > 0 ? ((currentTotal.kwh - previousTotal.kwh) / previousTotal.kwh * 100) : 0;
+        const costDiff = previousTotal.cost > 0 ? ((currentTotal.cost - previousTotal.cost) / previousTotal.cost * 100) : 0;
 
-        // Trouver pic et creux
-        const validDays = monthData.days.filter(d => !d.missing && d.kwh > 0);
-        const peakDay = validDays.length ? validDays.reduce((a, b) => a.kwh > b.kwh ? a : b) : null;
-        const lowDay = validDays.length ? validDays.reduce((a, b) => a.kwh < b.kwh ? a : b) : null;
-
-        return {
-            totalCost: monthData.totalCost.toFixed(2),
-            totalKwh: monthData.totalKwh.toFixed(1),
-            avgCostPerDay: avgCostPerDay.toFixed(2),
-            avgKwhPerDay: avgKwhPerDay.toFixed(1),
-            missingDays: monthData.missingDays,
-            peakDay: peakDay ? new Date(peakDay.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "—",
-            peakKwh: peakDay?.kwh.toFixed(1) || "—",
-            lowDay: lowDay ? new Date(lowDay.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "—",
-            lowKwh: lowDay?.kwh.toFixed(1) || "—",
-        };
-    }, [monthData]);
-
-    // Comparaison semaine
-    const weekComparison = useMemo(() => {
-        const currentTotal = weekData.current.reduce((acc, d) => acc + d.kwh, 0);
-        const previousTotal = weekData.previous.reduce((acc, d) => acc + d.kwh, 0);
-        const diff = previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal * 100).toFixed(0) : 0;
-        return { currentTotal: currentTotal.toFixed(1), previousTotal: previousTotal.toFixed(1), diff };
+        return { current: currentTotal, previous: previousTotal, kwhDiff, costDiff };
     }, [weekData]);
+
+    // Trouver min/max des tarifs pour colorisation
+    const allPrices = Object.values(CONTRACT.tarifs).flatMap(t => [t.hc, t.hp]);
+    const minPrice = Math.min(...allPrices);
+    const maxPrice = Math.max(...allPrices);
+
+    const getPriceColor = (price) => {
+        if (price === minPrice) return "text-emerald-600 font-semibold";
+        if (price === maxPrice) return "text-rose-600 font-semibold";
+        return "text-gray-900";
+    };
 
     if (loading) {
         return (
             <>
                 <PricingHeader />
-                <div className="p-6">
-                    <div className="animate-pulse space-y-4">
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            {[1, 2, 3, 4].map(i => <div key={i} className="bg-white rounded-xl border h-24" />)}
+                <div className="p-4 md:p-6">
+                    <div className="animate-pulse grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div className="lg:col-span-2 space-y-4">
+                            <div className="bg-white rounded-xl border h-64" />
+                            <div className="bg-white rounded-xl border h-64" />
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="bg-white rounded-xl border h-48" />
-                            <div className="bg-white rounded-xl border h-48" />
-                        </div>
+                        <div className="bg-white rounded-xl border h-full min-h-[400px]" />
                     </div>
                 </div>
             </>
@@ -255,176 +221,232 @@ export default function PricingPage() {
         <>
             <PricingHeader />
             
-            <div className="p-6 space-y-4">
-                {/* KPIs */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <KpiCard
-                        label="Coût du mois"
-                        value={kpis?.totalCost || "—"}
-                        unit="€"
-                        subtext={`${monthData.daysCount} jours`}
-                        warning={monthData.missingDays > 0}
-                        color="emerald"
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.121 15.536c-1.171 1.952-3.07 1.952-4.242 0-1.172-1.953-1.172-5.119 0-7.072 1.171-1.952 3.07-1.952 4.242 0M8 10.5h4m-4 3h4" /></svg>}
-                    />
-                    <KpiCard
-                        label="Coût moyen/jour"
-                        value={kpis?.avgCostPerDay || "—"}
-                        unit="€"
-                        color="blue"
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                    />
-                    <KpiCard
-                        label="Conso. moyenne"
-                        value={kpis?.avgKwhPerDay || "—"}
-                        unit="kWh/j"
-                        color="amber"
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-                    />
-                    <KpiCard
-                        label="Pic conso."
-                        value={kpis?.peakKwh || "—"}
-                        unit="kWh"
-                        subtext={kpis?.peakDay}
-                        color="rose"
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-                    />
-                </div>
-
-                {/* Grille principale */}
+            <div className="p-4 md:p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Infos contrat (fusionné grille + HP/HC) */}
-                    <Section
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-                        title="Infos contrat"
-                        compact
-                    >
-                        <div className="space-y-2 text-sm">
-                            {/* Horaires */}
-                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                                <span className="text-gray-500">Heures pleines</span>
-                                <span className="font-medium text-amber-600">06h - 22h</span>
-                            </div>
-                            <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
-                                <span className="text-gray-500">Heures creuses</span>
-                                <span className="font-medium text-emerald-600">22h - 06h</span>
-                            </div>
-                            {/* Tarifs */}
-                            <div className="pt-2 grid grid-cols-3 gap-2 text-xs">
-                                <div></div>
-                                <div className="text-center text-gray-400">HC</div>
-                                <div className="text-center text-gray-400">HP</div>
-                            </div>
-                            {[
-                                { color: "sky", name: "Bleu", ...TEMPO_TARIFS.bleu },
-                                { color: "gray", name: "Blanc", ...TEMPO_TARIFS.blanc },
-                                { color: "red", name: "Rouge", ...TEMPO_TARIFS.rouge },
-                            ].map(t => (
-                                <div key={t.name} className="grid grid-cols-3 gap-2 text-xs py-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={`w-2 h-2 rounded-full ${t.color === "gray" ? "bg-white border border-gray-400" : `bg-${t.color}-500`}`}></span>
-                                        <span className="text-gray-700">{t.name}</span>
+                    {/* ===== GRAPHIQUES (66%) ===== */}
+                    <div className="lg:col-span-2 space-y-4">
+                        {/* Graphique Consommation kWh */}
+                        <Section
+                            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                            title="Consommation (kWh)"
+                            description="Semaine en cours vs semaine précédente"
+                        >
+                            {/* Résumé */}
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-xs text-blue-600 font-medium">Cette semaine</p>
+                                    <p className="text-xl font-bold text-blue-700">{comparison.current.kwh.toFixed(1)} <span className="text-sm font-normal">kWh</span></p>
+                                    <div className="flex gap-2 mt-1 text-xs text-blue-600">
+                                        <span>HP: {comparison.current.kwhHp.toFixed(1)}</span>
+                                        <span>HC: {comparison.current.kwhHc.toFixed(1)}</span>
                                     </div>
-                                    <div className="text-center font-medium">{t.hc.toFixed(2)}€</div>
-                                    <div className={`text-center font-medium ${t.name === "Rouge" ? "text-rose-600" : ""}`}>{t.hp.toFixed(2)}€</div>
                                 </div>
-                            ))}
-                        </div>
-                    </Section>
-
-                    {/* Saison Tempo compact */}
-                    <Section
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                        title="Saison Tempo"
-                        description={seasonStats?.periode}
-                        compact
-                    >
-                        <div className="space-y-2">
-                            {[
-                                { color: "sky", name: "Bleu", used: seasonStats?.bleu || 0, total: 300 },
-                                { color: "gray", name: "Blanc", used: seasonStats?.blanc || 0, total: 43 },
-                                { color: "red", name: "Rouge", used: seasonStats?.rouge || 0, total: 22 },
-                            ].map(t => (
-                                <div key={t.name} className="flex items-center gap-2">
-                                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${t.color === "gray" ? "bg-white border border-gray-400" : `bg-${t.color}-500`}`}></span>
-                                    <div className="flex-1">
-                                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div className={`h-full ${t.color === "gray" ? "bg-gray-400" : `bg-${t.color}-500`} rounded-full`} style={{ width: `${(t.used / t.total) * 100}%` }} />
+                                <div className="p-3 bg-slate-50 rounded-lg">
+                                    <p className="text-xs text-gray-500 font-medium">Semaine précédente</p>
+                                    <p className="text-xl font-bold text-gray-700">{comparison.previous.kwh.toFixed(1)} <span className="text-sm font-normal">kWh</span></p>
+                                    <div className={`mt-1 text-xs ${comparison.kwhDiff > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                                        {comparison.kwhDiff > 0 ? "+" : ""}{comparison.kwhDiff.toFixed(0)}%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Barres comparatives */}
+                            <div className="space-y-2">
+                                {weekData.current.map((d, i) => {
+                                    const prev = weekData.previous[i];
+                                    const maxKwh = Math.max(...weekData.current.map(x => x.kwh), ...weekData.previous.map(x => x.kwh), 1);
+                                    return (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <span className="w-8 text-xs text-gray-500">{d.day}</span>
+                                            <div className="flex-1 flex gap-1">
+                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden relative">
+                                                    <div 
+                                                        className="h-full bg-blue-500 rounded" 
+                                                        style={{ width: `${(d.kwh / maxKwh) * 100}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-slate-400 rounded" 
+                                                        style={{ width: `${((prev?.kwh || 0) / maxKwh) * 100}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <span className="w-20 text-xs text-right">
+                                                <span className="text-blue-600 font-medium">{d.kwh.toFixed(1)}</span>
+                                                <span className="text-gray-400 mx-1">/</span>
+                                                <span className="text-gray-500">{prev?.kwh.toFixed(1) || "0"}</span>
+                                            </span>
                                         </div>
-                                    </div>
-                                    <span className="text-xs text-gray-600 w-14 text-right">{t.used}/{t.total}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Section>
-
-                    {/* Comparaison semaine */}
-                    <Section
-                        icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-                        title="Cette semaine"
-                        description={`vs semaine précédente`}
-                        compact
-                    >
-                        <div className="text-center py-2">
-                            <div className="text-2xl font-bold text-gray-900">{weekComparison.currentTotal} <span className="text-sm font-normal text-gray-500">kWh</span></div>
-                            <div className={`text-sm mt-1 ${Number(weekComparison.diff) > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                                {Number(weekComparison.diff) > 0 ? "+" : ""}{weekComparison.diff}% vs {weekComparison.previousTotal} kWh
+                                    );
+                                })}
                             </div>
-                        </div>
-                        {/* Mini barres par jour */}
-                        <div className="flex justify-between gap-1 mt-3">
-                            {weekData.current.map((d, i) => (
-                                <div key={i} className="flex-1 text-center">
-                                    <div className="h-12 flex items-end justify-center">
-                                        <div 
-                                            className="w-full max-w-4 bg-blue-500 rounded-t" 
-                                            style={{ height: `${Math.max(4, (d.kwh / Math.max(...weekData.current.map(x => x.kwh), 1)) * 100)}%` }}
-                                        />
-                                    </div>
-                                    <span className="text-[9px] text-gray-400">{d.day}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Section>
-                </div>
+                            <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded" /> Cette semaine</span>
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-slate-400 rounded" /> Semaine précédente</span>
+                            </div>
+                        </Section>
 
-                {/* Détails par jour du mois */}
-                <Section
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-                    title="Détails du mois"
-                    description="Consommation et coût par jour"
-                >
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-xs text-gray-500 border-b border-slate-100">
-                                    <th className="text-left py-2 font-medium">Date</th>
-                                    <th className="text-right py-2 font-medium">Conso.</th>
-                                    <th className="text-right py-2 font-medium">Coût</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {monthData.days.slice(-10).reverse().map((d, i) => (
-                                    <tr key={i} className={`border-b border-slate-50 ${d.missing ? "opacity-50" : ""}`}>
-                                        <td className="py-2 text-gray-700">
-                                            {new Date(d.date).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
-                                            {d.missing && <span className="ml-1 text-amber-500 text-xs">(incomplet)</span>}
-                                        </td>
-                                        <td className="py-2 text-right font-medium">{d.kwh.toFixed(1)} kWh</td>
-                                        <td className="py-2 text-right font-medium text-emerald-600">{d.cost.toFixed(2)} €</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr className="border-t-2 border-slate-200 font-semibold">
-                                    <td className="py-2">Total</td>
-                                    <td className="py-2 text-right">{monthData.totalKwh.toFixed(1)} kWh</td>
-                                    <td className="py-2 text-right text-emerald-600">{monthData.totalCost.toFixed(2)} €</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                        {/* Graphique Coût € */}
+                        <Section
+                            icon={<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2v-1.93c-1.86-.36-2.95-1.51-3.26-3.09h1.78c.23.82.88 1.51 2.28 1.51 1.36 0 1.87-.68 1.87-1.36 0-.97-.65-1.3-2.17-1.66-1.69-.39-3.24-.94-3.24-2.94 0-1.33.97-2.54 2.74-2.93V6h2v1.91c1.5.37 2.47 1.4 2.63 2.84h-1.75c-.13-.74-.63-1.34-1.67-1.34-1 0-1.68.48-1.68 1.25 0 .84.65 1.13 2.08 1.47 1.81.42 3.35 1.03 3.35 3.04 0 1.58-1.17 2.6-2.96 2.92z"/></svg>}
+                            title="Coût (€)"
+                            description="Semaine en cours vs semaine précédente"
+                        >
+                            {/* Résumé */}
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="p-3 bg-emerald-50 rounded-lg">
+                                    <p className="text-xs text-emerald-600 font-medium">Cette semaine</p>
+                                    <p className="text-xl font-bold text-emerald-700">{comparison.current.cost.toFixed(2)} <span className="text-sm font-normal">€</span></p>
+                                    <div className="flex gap-2 mt-1 text-xs text-emerald-600">
+                                        <span>HP: {comparison.current.costHp.toFixed(2)}€</span>
+                                        <span>HC: {comparison.current.costHc.toFixed(2)}€</span>
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-slate-50 rounded-lg">
+                                    <p className="text-xs text-gray-500 font-medium">Semaine précédente</p>
+                                    <p className="text-xl font-bold text-gray-700">{comparison.previous.cost.toFixed(2)} <span className="text-sm font-normal">€</span></p>
+                                    <div className={`mt-1 text-xs ${comparison.costDiff > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                                        {comparison.costDiff > 0 ? "+" : ""}{comparison.costDiff.toFixed(0)}%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Barres comparatives */}
+                            <div className="space-y-2">
+                                {weekData.current.map((d, i) => {
+                                    const prev = weekData.previous[i];
+                                    const maxCost = Math.max(...weekData.current.map(x => x.cost), ...weekData.previous.map(x => x.cost), 0.1);
+                                    return (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <span className="w-8 text-xs text-gray-500">{d.day}</span>
+                                            <div className="flex-1 flex gap-1">
+                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-emerald-500 rounded" 
+                                                        style={{ width: `${(d.cost / maxCost) * 100}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-slate-400 rounded" 
+                                                        style={{ width: `${((prev?.cost || 0) / maxCost) * 100}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <span className="w-24 text-xs text-right">
+                                                <span className="text-emerald-600 font-medium">{d.cost.toFixed(2)}€</span>
+                                                <span className="text-gray-400 mx-1">/</span>
+                                                <span className="text-gray-500">{prev?.cost.toFixed(2) || "0"}€</span>
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500 rounded" /> Cette semaine</span>
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-slate-400 rounded" /> Semaine précédente</span>
+                            </div>
+                        </Section>
                     </div>
-                </Section>
+
+                    {/* ===== CARD CONTRAT (33%) ===== */}
+                    <div className="lg:col-span-1">
+                        <Section
+                            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                            title="Contrat"
+                            className="h-full"
+                        >
+                            {/* Nom et date */}
+                            <div className="mb-4 pb-4 border-b border-slate-100">
+                                <p className="text-lg font-bold text-gray-900">{CONTRACT.name} {CONTRACT.provider}</p>
+                                <p className="text-xs text-gray-500">Depuis le {new Date(CONTRACT.startDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                            </div>
+
+                            {/* Heures creuses */}
+                            <div className="mb-4 pb-4 border-b border-slate-100">
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-2">Heures creuses</p>
+                                {CONTRACT.hcPeriods.map((period, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                        <span className="text-sm font-medium text-gray-900">{period}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Abonnement */}
+                            <div className="mb-4 pb-4 border-b border-slate-100">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500 uppercase font-medium">Abonnement</span>
+                                    <span className="text-sm font-bold text-gray-900">{CONTRACT.subscription.toFixed(2)} €/mois</span>
+                                </div>
+                            </div>
+
+                            {/* Grille tarifaire */}
+                            <div className="mb-4 pb-4 border-b border-slate-100">
+                                <p className="text-xs text-gray-500 uppercase font-medium mb-2">Grille tarifaire (€/kWh)</p>
+                                <div className="space-y-2">
+                                    {/* En-tête */}
+                                    <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 uppercase">
+                                        <div></div>
+                                        <div className="text-center">HC</div>
+                                        <div className="text-center">HP</div>
+                                    </div>
+                                    {/* Tarifs */}
+                                    {[
+                                        { name: "Bleu", color: "bg-sky-500", ...CONTRACT.tarifs.bleu },
+                                        { name: "Blanc", color: "bg-white border border-gray-300", ...CONTRACT.tarifs.blanc },
+                                        { name: "Rouge", color: "bg-red-500", ...CONTRACT.tarifs.rouge },
+                                    ].map((t) => (
+                                        <div key={t.name} className="grid grid-cols-3 gap-2 items-center py-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`w-2.5 h-2.5 rounded-full ${t.color}`} />
+                                                <span className="text-xs text-gray-700">{t.name}</span>
+                                            </div>
+                                            <div className={`text-center text-sm ${getPriceColor(t.hc)}`}>
+                                                {t.hc.toFixed(3)}
+                                            </div>
+                                            <div className={`text-center text-sm ${getPriceColor(t.hp)}`}>
+                                                {t.hp.toFixed(3)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Saison Tempo */}
+                            {seasonStats && (
+                                <div>
+                                    <p className="text-xs text-gray-500 uppercase font-medium mb-2">
+                                        Saison {seasonStats.periode}
+                                    </p>
+                                    <div className="space-y-2">
+                                        {[
+                                            { name: "Bleu", color: "bg-sky-500", used: seasonStats.bleu, total: 300 },
+                                            { name: "Blanc", color: "bg-white border border-gray-300", used: seasonStats.blanc, total: 43 },
+                                            { name: "Rouge", color: "bg-red-500", used: seasonStats.rouge, total: 22 },
+                                        ].map((t) => (
+                                            <div key={t.name} className="flex items-center gap-2">
+                                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${t.color}`} />
+                                                <div className="flex-1">
+                                                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className={`h-full rounded-full ${t.color.includes("white") ? "bg-gray-400" : t.color}`}
+                                                            style={{ width: `${(t.used / t.total) * 100}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs text-gray-600 w-12 text-right font-medium">
+                                                    {t.used}/{t.total}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </Section>
+                    </div>
+                </div>
             </div>
         </>
     );

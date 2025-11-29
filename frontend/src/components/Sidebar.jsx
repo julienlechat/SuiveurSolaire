@@ -16,10 +16,10 @@ const HomeIcon = () => (
     </svg>
 );
 
-// Icône Tarification
-const PricingIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+// Icône € simple
+const EuroIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2v-1.93c-1.86-.36-2.95-1.51-3.26-3.09h1.78c.23.82.88 1.51 2.28 1.51 1.36 0 1.87-.68 1.87-1.36 0-.97-.65-1.3-2.17-1.66-1.69-.39-3.24-.94-3.24-2.94 0-1.33.97-2.54 2.74-2.93V6h2v1.91c1.5.37 2.47 1.4 2.63 2.84h-1.75c-.13-.74-.63-1.34-1.67-1.34-1 0-1.68.48-1.68 1.25 0 .84.65 1.13 2.08 1.47 1.81.42 3.35 1.03 3.35 3.04 0 1.58-1.17 2.6-2.96 2.92z"/>
     </svg>
 );
 
@@ -46,7 +46,7 @@ const CloseIcon = () => (
 
 const menuItems = [
     { path: "/", label: "Tableau de bord", icon: <HomeIcon /> },
-    { path: "/pricing", label: "Tarification", icon: <PricingIcon /> },
+    { path: "/pricing", label: "Suivi des coûts", icon: <EuroIcon /> },
     { path: "/settings", label: "Réglages", icon: <SettingsIcon /> },
 ];
 
