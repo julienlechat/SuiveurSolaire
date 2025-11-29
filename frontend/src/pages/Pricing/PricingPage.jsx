@@ -43,10 +43,10 @@ function Section({ icon, title, description, children, headerRight, className = 
 }
 
 // Tooltip component
-function Tooltip({ children, content }) {
+function Tooltip({ children, content, className = "" }) {
     const [show, setShow] = useState(false);
     return (
-        <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+        <div className={`relative ${className}`} onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
             {children}
             {show && content && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg">
@@ -315,7 +315,7 @@ export default function PricingPage() {
                                             <span className="w-8 text-xs text-gray-500 font-medium">{d.day}</span>
                                             <div className="flex-1 flex gap-2">
                                                 {/* Barre actuelle */}
-                                                <Tooltip content={
+                                                <Tooltip className="flex-1" content={
                                                     <div className="text-center">
                                                         <div className="font-semibold">{d.day} (cette semaine)</div>
                                                         <div>Total: {currentValue.toFixed(viewMode === "kwh" ? 1 : 2)} {unit}</div>
@@ -325,14 +325,14 @@ export default function PricingPage() {
                                                         </div>
                                                     </div>
                                                 }>
-                                                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex cursor-pointer hover:opacity-80 transition-opacity">
-                                                        <div className={`${colors.hp}`} style={{ width: `${(currentHp / maxValue) * 100}%` }} />
-                                                        <div className={`${colors.hc}`} style={{ width: `${(currentHc / maxValue) * 100}%` }} />
+                                                    <div className="h-6 bg-slate-100 rounded-md cursor-pointer hover:opacity-80 transition-opacity flex">
+                                                        <div className={`h-full ${colors.hp} rounded-l-md`} style={{ width: `${Math.max((currentHp / maxValue) * 100, 0)}%` }} />
+                                                        <div className={`h-full ${colors.hc} rounded-r-md`} style={{ width: `${Math.max((currentHc / maxValue) * 100, 0)}%` }} />
                                                     </div>
                                                 </Tooltip>
                                                 
                                                 {/* Barre précédente */}
-                                                <Tooltip content={
+                                                <Tooltip className="flex-1" content={
                                                     <div className="text-center">
                                                         <div className="font-semibold">{prev.day} (semaine précédente)</div>
                                                         <div>Total: {prevValue.toFixed(viewMode === "kwh" ? 1 : 2)} {unit}</div>
@@ -342,9 +342,9 @@ export default function PricingPage() {
                                                         </div>
                                                     </div>
                                                 }>
-                                                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex cursor-pointer hover:opacity-80 transition-opacity">
-                                                        <div className={`${colors.hpPrev}`} style={{ width: `${(prevHp / maxValue) * 100}%` }} />
-                                                        <div className={`${colors.hcPrev}`} style={{ width: `${(prevHc / maxValue) * 100}%` }} />
+                                                    <div className="h-6 bg-slate-100 rounded-md cursor-pointer hover:opacity-80 transition-opacity flex">
+                                                        <div className={`h-full ${colors.hpPrev} rounded-l-md`} style={{ width: `${Math.max((prevHp / maxValue) * 100, 0)}%` }} />
+                                                        <div className={`h-full ${colors.hcPrev} rounded-r-md`} style={{ width: `${Math.max((prevHc / maxValue) * 100, 0)}%` }} />
                                                     </div>
                                                 </Tooltip>
                                             </div>
