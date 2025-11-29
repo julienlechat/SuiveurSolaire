@@ -1,15 +1,20 @@
 import { useEffect, useState, useMemo } from "react";
 import { fetchHistoryGraph } from "../../api";
 
-// Header avec SVG € simple
+// SVG € simple
+const EuroIcon = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="20" fontWeight="bold">€</text>
+    </svg>
+);
+
+// Header
 function PricingHeader() {
     return (
         <header className="bg-white border-b border-slate-200 px-4 md:px-6 lg:px-8 py-4 md:py-5">
             <div className="flex items-center">
                 <div className="p-2 rounded-lg bg-emerald-100 mr-3">
-                    <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2v-1.93c-1.86-.36-2.95-1.51-3.26-3.09h1.78c.23.82.88 1.51 2.28 1.51 1.36 0 1.87-.68 1.87-1.36 0-.97-.65-1.3-2.17-1.66-1.69-.39-3.24-.94-3.24-2.94 0-1.33.97-2.54 2.74-2.93V6h2v1.91c1.5.37 2.47 1.4 2.63 2.84h-1.75c-.13-.74-.63-1.34-1.67-1.34-1 0-1.68.48-1.68 1.25 0 .84.65 1.13 2.08 1.47 1.81.42 3.35 1.03 3.35 3.04 0 1.58-1.17 2.6-2.96 2.92z"/>
-                    </svg>
+                    <EuroIcon className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
                     <h2 className="text-lg font-semibold text-gray-900">Suivi des coûts</h2>
@@ -20,8 +25,8 @@ function PricingHeader() {
     );
 }
 
-// Section card avec SVG
-function Section({ icon, title, description, children, className = "" }) {
+// Section card
+function Section({ icon, title, description, children, headerRight, className = "" }) {
     return (
         <div className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${className}`}>
             <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
@@ -30,8 +35,25 @@ function Section({ icon, title, description, children, className = "" }) {
                     <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
                     {description && <p className="text-xs text-gray-500 truncate">{description}</p>}
                 </div>
+                {headerRight}
             </div>
             <div className="p-4">{children}</div>
+        </div>
+    );
+}
+
+// Tooltip component
+function Tooltip({ children, content }) {
+    const [show, setShow] = useState(false);
+    return (
+        <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+            {children}
+            {show && content && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg">
+                    {content}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+                </div>
+            )}
         </div>
     );
 }
@@ -41,7 +63,7 @@ const CONTRACT = {
     name: "Tempo",
     provider: "EDF",
     startDate: "2024-09-01",
-    subscription: 15.79, // €/mois pour 9kVA
+    subscription: 15.79,
     hcPeriods: ["22h00 - 06h00"],
     tarifs: {
         bleu: { hc: 0.1296, hp: 0.1609 },
@@ -54,15 +76,13 @@ export default function PricingPage() {
     const [loading, setLoading] = useState(true);
     const [seasonStats, setSeasonStats] = useState(null);
     const [weekData, setWeekData] = useState({ current: [], previous: [] });
+    const [viewMode, setViewMode] = useState("kwh"); // "kwh" ou "euro"
 
-    // Charger les données
     useEffect(() => {
         async function loadData() {
             try {
                 const today = new Date();
                 const dayOfWeek = today.getDay() || 7;
-
-                // Charger semaine actuelle et précédente
                 const currentWeek = [];
                 const previousWeek = [];
                 const dayNames = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -78,7 +98,6 @@ export default function PricingPage() {
                             const data = await fetchHistoryGraph(dateStr);
                             if (data.ok && data.stats) {
                                 const kwh = Number(data.stats.totalConsumption) || 0;
-                                // Estimation: 60% HP, 40% HC
                                 const kwhHp = kwh * 0.6;
                                 const kwhHc = kwh * 0.4;
                                 const costHp = kwhHp * CONTRACT.tarifs.bleu.hp;
@@ -148,10 +167,7 @@ export default function PricingPage() {
                         }
                     });
 
-                    setSeasonStats({
-                        periode: `${startSeasonYear}-${startSeasonYear + 1}`,
-                        bleu, blanc, rouge,
-                    });
+                    setSeasonStats({ periode: `${startSeasonYear}-${startSeasonYear + 1}`, bleu, blanc, rouge });
                 }
             } catch (e) {
                 console.error("Error loading data:", e);
@@ -163,42 +179,41 @@ export default function PricingPage() {
         loadData();
     }, []);
 
-    // Calculs comparatifs
+    // Calculs
     const comparison = useMemo(() => {
-        const currentTotal = weekData.current.reduce((acc, d) => ({ 
-            kwh: acc.kwh + d.kwh, 
-            kwhHp: acc.kwhHp + d.kwhHp,
-            kwhHc: acc.kwhHc + d.kwhHc,
-            cost: acc.cost + d.cost,
-            costHp: acc.costHp + d.costHp,
-            costHc: acc.costHc + d.costHc,
+        const sum = (arr) => arr.reduce((acc, d) => ({ 
+            kwh: acc.kwh + d.kwh, kwhHp: acc.kwhHp + d.kwhHp, kwhHc: acc.kwhHc + d.kwhHc,
+            cost: acc.cost + d.cost, costHp: acc.costHp + d.costHp, costHc: acc.costHc + d.costHc,
         }), { kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
         
-        const previousTotal = weekData.previous.reduce((acc, d) => ({ 
-            kwh: acc.kwh + d.kwh, 
-            kwhHp: acc.kwhHp + d.kwhHp,
-            kwhHc: acc.kwhHc + d.kwhHc,
-            cost: acc.cost + d.cost,
-            costHp: acc.costHp + d.costHp,
-            costHc: acc.costHc + d.costHc,
-        }), { kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 });
+        const current = sum(weekData.current);
+        const previous = sum(weekData.previous);
+        const diff = previous.kwh > 0 ? ((current.kwh - previous.kwh) / previous.kwh * 100) : 0;
+        const costDiff = previous.cost > 0 ? ((current.cost - previous.cost) / previous.cost * 100) : 0;
 
-        const kwhDiff = previousTotal.kwh > 0 ? ((currentTotal.kwh - previousTotal.kwh) / previousTotal.kwh * 100) : 0;
-        const costDiff = previousTotal.cost > 0 ? ((currentTotal.cost - previousTotal.cost) / previousTotal.cost * 100) : 0;
-
-        return { current: currentTotal, previous: previousTotal, kwhDiff, costDiff };
+        return { current, previous, diff, costDiff };
     }, [weekData]);
 
-    // Trouver min/max des tarifs pour colorisation
+    // Min/max tarifs
     const allPrices = Object.values(CONTRACT.tarifs).flatMap(t => [t.hc, t.hp]);
     const minPrice = Math.min(...allPrices);
     const maxPrice = Math.max(...allPrices);
-
     const getPriceColor = (price) => {
         if (price === minPrice) return "text-emerald-600 font-semibold";
         if (price === maxPrice) return "text-rose-600 font-semibold";
         return "text-gray-900";
     };
+
+    // Couleurs selon mode
+    const colors = viewMode === "kwh" 
+        ? { hp: "bg-blue-600", hc: "bg-blue-300", hpPrev: "bg-slate-500", hcPrev: "bg-slate-300" }
+        : { hp: "bg-emerald-600", hc: "bg-emerald-300", hpPrev: "bg-slate-500", hcPrev: "bg-slate-300" };
+
+    const maxValue = Math.max(
+        ...weekData.current.map(d => viewMode === "kwh" ? d.kwh : d.cost),
+        ...weekData.previous.map(d => viewMode === "kwh" ? d.kwh : d.cost),
+        1
+    );
 
     if (loading) {
         return (
@@ -206,11 +221,8 @@ export default function PricingPage() {
                 <PricingHeader />
                 <div className="p-4 md:p-6">
                     <div className="animate-pulse grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div className="lg:col-span-2 space-y-4">
-                            <div className="bg-white rounded-xl border h-64" />
-                            <div className="bg-white rounded-xl border h-64" />
-                        </div>
-                        <div className="bg-white rounded-xl border h-full min-h-[400px]" />
+                        <div className="lg:col-span-2 bg-white rounded-xl border h-96" />
+                        <div className="bg-white rounded-xl border h-96" />
                     </div>
                 </div>
             </>
@@ -223,129 +235,152 @@ export default function PricingPage() {
             
             <div className="p-4 md:p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* ===== GRAPHIQUES (66%) ===== */}
-                    <div className="lg:col-span-2 space-y-4">
-                        {/* Graphique Consommation kWh */}
+                    {/* ===== GRAPHIQUE UNIFIÉ (66%) ===== */}
+                    <div className="lg:col-span-2">
                         <Section
-                            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-                            title="Consommation (kWh)"
+                            icon={viewMode === "kwh" 
+                                ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                : <EuroIcon className="w-4 h-4" />
+                            }
+                            title="Comparaison hebdomadaire"
                             description="Semaine en cours vs semaine précédente"
+                            headerRight={
+                                <div className="flex bg-slate-100 rounded-lg p-0.5">
+                                    <button
+                                        onClick={() => setViewMode("kwh")}
+                                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                                            viewMode === "kwh" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                    >
+                                        kWh
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode("euro")}
+                                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                                            viewMode === "euro" ? "bg-white shadow text-emerald-600" : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                    >
+                                        €
+                                    </button>
+                                </div>
+                            }
                         >
                             {/* Résumé */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="p-3 bg-blue-50 rounded-lg">
-                                    <p className="text-xs text-blue-600 font-medium">Cette semaine</p>
-                                    <p className="text-xl font-bold text-blue-700">{comparison.current.kwh.toFixed(1)} <span className="text-sm font-normal">kWh</span></p>
-                                    <div className="flex gap-2 mt-1 text-xs text-blue-600">
-                                        <span>HP: {comparison.current.kwhHp.toFixed(1)}</span>
-                                        <span>HC: {comparison.current.kwhHc.toFixed(1)}</span>
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className={`p-4 rounded-xl ${viewMode === "kwh" ? "bg-blue-50" : "bg-emerald-50"}`}>
+                                    <p className={`text-xs font-medium ${viewMode === "kwh" ? "text-blue-600" : "text-emerald-600"}`}>Cette semaine</p>
+                                    <p className={`text-2xl font-bold ${viewMode === "kwh" ? "text-blue-700" : "text-emerald-700"}`}>
+                                        {viewMode === "kwh" 
+                                            ? `${comparison.current.kwh.toFixed(1)} kWh`
+                                            : `${comparison.current.cost.toFixed(2)} €`
+                                        }
+                                    </p>
+                                    <div className={`flex gap-3 mt-1 text-xs ${viewMode === "kwh" ? "text-blue-600" : "text-emerald-600"}`}>
+                                        <span>HP: {viewMode === "kwh" ? `${comparison.current.kwhHp.toFixed(1)}` : `${comparison.current.costHp.toFixed(2)}€`}</span>
+                                        <span>HC: {viewMode === "kwh" ? `${comparison.current.kwhHc.toFixed(1)}` : `${comparison.current.costHc.toFixed(2)}€`}</span>
                                     </div>
                                 </div>
-                                <div className="p-3 bg-slate-50 rounded-lg">
+                                <div className="p-4 bg-slate-50 rounded-xl">
                                     <p className="text-xs text-gray-500 font-medium">Semaine précédente</p>
-                                    <p className="text-xl font-bold text-gray-700">{comparison.previous.kwh.toFixed(1)} <span className="text-sm font-normal">kWh</span></p>
-                                    <div className={`mt-1 text-xs ${comparison.kwhDiff > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                                        {comparison.kwhDiff > 0 ? "+" : ""}{comparison.kwhDiff.toFixed(0)}%
+                                    <p className="text-2xl font-bold text-gray-700">
+                                        {viewMode === "kwh" 
+                                            ? `${comparison.previous.kwh.toFixed(1)} kWh`
+                                            : `${comparison.previous.cost.toFixed(2)} €`
+                                        }
+                                    </p>
+                                    <div className={`mt-1 text-xs font-medium ${
+                                        (viewMode === "kwh" ? comparison.diff : comparison.costDiff) > 0 ? "text-rose-600" : "text-emerald-600"
+                                    }`}>
+                                        {(viewMode === "kwh" ? comparison.diff : comparison.costDiff) > 0 ? "+" : ""}
+                                        {(viewMode === "kwh" ? comparison.diff : comparison.costDiff).toFixed(0)}%
                                     </div>
                                 </div>
                             </div>
                             
-                            {/* Barres comparatives */}
-                            <div className="space-y-2">
+                            {/* Barres avec HP/HC séparées */}
+                            <div className="space-y-3">
                                 {weekData.current.map((d, i) => {
-                                    const prev = weekData.previous[i];
-                                    const maxKwh = Math.max(...weekData.current.map(x => x.kwh), ...weekData.previous.map(x => x.kwh), 1);
+                                    const prev = weekData.previous[i] || { kwh: 0, kwhHp: 0, kwhHc: 0, cost: 0, costHp: 0, costHc: 0 };
+                                    const currentValue = viewMode === "kwh" ? d.kwh : d.cost;
+                                    const currentHp = viewMode === "kwh" ? d.kwhHp : d.costHp;
+                                    const currentHc = viewMode === "kwh" ? d.kwhHc : d.costHc;
+                                    const prevValue = viewMode === "kwh" ? prev.kwh : prev.cost;
+                                    const prevHp = viewMode === "kwh" ? prev.kwhHp : prev.costHp;
+                                    const prevHc = viewMode === "kwh" ? prev.kwhHc : prev.costHc;
+                                    
+                                    const unit = viewMode === "kwh" ? "kWh" : "€";
+                                    
                                     return (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <span className="w-8 text-xs text-gray-500">{d.day}</span>
-                                            <div className="flex-1 flex gap-1">
-                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden relative">
-                                                    <div 
-                                                        className="h-full bg-blue-500 rounded" 
-                                                        style={{ width: `${(d.kwh / maxKwh) * 100}%` }}
-                                                    />
-                                                </div>
-                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-slate-400 rounded" 
-                                                        style={{ width: `${((prev?.kwh || 0) / maxKwh) * 100}%` }}
-                                                    />
-                                                </div>
+                                        <div key={i} className="flex items-center gap-3">
+                                            <span className="w-8 text-xs text-gray-500 font-medium">{d.day}</span>
+                                            <div className="flex-1 flex gap-2">
+                                                {/* Barre actuelle */}
+                                                <Tooltip content={
+                                                    <div className="text-center">
+                                                        <div className="font-semibold">{d.day} (cette semaine)</div>
+                                                        <div>Total: {currentValue.toFixed(viewMode === "kwh" ? 1 : 2)} {unit}</div>
+                                                        <div className="flex gap-2 justify-center mt-1">
+                                                            <span>HP: {currentHp.toFixed(viewMode === "kwh" ? 1 : 2)}</span>
+                                                            <span>HC: {currentHc.toFixed(viewMode === "kwh" ? 1 : 2)}</span>
+                                                        </div>
+                                                    </div>
+                                                }>
+                                                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex cursor-pointer hover:opacity-80 transition-opacity">
+                                                        <div className={`${colors.hp}`} style={{ width: `${(currentHp / maxValue) * 100}%` }} />
+                                                        <div className={`${colors.hc}`} style={{ width: `${(currentHc / maxValue) * 100}%` }} />
+                                                    </div>
+                                                </Tooltip>
+                                                
+                                                {/* Barre précédente */}
+                                                <Tooltip content={
+                                                    <div className="text-center">
+                                                        <div className="font-semibold">{prev.day} (semaine précédente)</div>
+                                                        <div>Total: {prevValue.toFixed(viewMode === "kwh" ? 1 : 2)} {unit}</div>
+                                                        <div className="flex gap-2 justify-center mt-1">
+                                                            <span>HP: {prevHp.toFixed(viewMode === "kwh" ? 1 : 2)}</span>
+                                                            <span>HC: {prevHc.toFixed(viewMode === "kwh" ? 1 : 2)}</span>
+                                                        </div>
+                                                    </div>
+                                                }>
+                                                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex cursor-pointer hover:opacity-80 transition-opacity">
+                                                        <div className={`${colors.hpPrev}`} style={{ width: `${(prevHp / maxValue) * 100}%` }} />
+                                                        <div className={`${colors.hcPrev}`} style={{ width: `${(prevHc / maxValue) * 100}%` }} />
+                                                    </div>
+                                                </Tooltip>
                                             </div>
-                                            <span className="w-20 text-xs text-right">
-                                                <span className="text-blue-600 font-medium">{d.kwh.toFixed(1)}</span>
+                                            <span className="w-28 text-xs text-right">
+                                                <span className={viewMode === "kwh" ? "text-blue-600" : "text-emerald-600"}>
+                                                    {currentValue.toFixed(viewMode === "kwh" ? 1 : 2)}
+                                                </span>
                                                 <span className="text-gray-400 mx-1">/</span>
-                                                <span className="text-gray-500">{prev?.kwh.toFixed(1) || "0"}</span>
+                                                <span className="text-gray-500">{prevValue.toFixed(viewMode === "kwh" ? 1 : 2)}</span>
+                                                <span className="text-gray-400 ml-0.5">{unit}</span>
                                             </span>
                                         </div>
                                     );
                                 })}
                             </div>
-                            <div className="flex gap-4 mt-3 text-xs text-gray-500">
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded" /> Cette semaine</span>
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-slate-400 rounded" /> Semaine précédente</span>
-                            </div>
-                        </Section>
-
-                        {/* Graphique Coût € */}
-                        <Section
-                            icon={<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2v-1.93c-1.86-.36-2.95-1.51-3.26-3.09h1.78c.23.82.88 1.51 2.28 1.51 1.36 0 1.87-.68 1.87-1.36 0-.97-.65-1.3-2.17-1.66-1.69-.39-3.24-.94-3.24-2.94 0-1.33.97-2.54 2.74-2.93V6h2v1.91c1.5.37 2.47 1.4 2.63 2.84h-1.75c-.13-.74-.63-1.34-1.67-1.34-1 0-1.68.48-1.68 1.25 0 .84.65 1.13 2.08 1.47 1.81.42 3.35 1.03 3.35 3.04 0 1.58-1.17 2.6-2.96 2.92z"/></svg>}
-                            title="Coût (€)"
-                            description="Semaine en cours vs semaine précédente"
-                        >
-                            {/* Résumé */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="p-3 bg-emerald-50 rounded-lg">
-                                    <p className="text-xs text-emerald-600 font-medium">Cette semaine</p>
-                                    <p className="text-xl font-bold text-emerald-700">{comparison.current.cost.toFixed(2)} <span className="text-sm font-normal">€</span></p>
-                                    <div className="flex gap-2 mt-1 text-xs text-emerald-600">
-                                        <span>HP: {comparison.current.costHp.toFixed(2)}€</span>
-                                        <span>HC: {comparison.current.costHc.toFixed(2)}€</span>
-                                    </div>
-                                </div>
-                                <div className="p-3 bg-slate-50 rounded-lg">
-                                    <p className="text-xs text-gray-500 font-medium">Semaine précédente</p>
-                                    <p className="text-xl font-bold text-gray-700">{comparison.previous.cost.toFixed(2)} <span className="text-sm font-normal">€</span></p>
-                                    <div className={`mt-1 text-xs ${comparison.costDiff > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                                        {comparison.costDiff > 0 ? "+" : ""}{comparison.costDiff.toFixed(0)}%
-                                    </div>
-                                </div>
-                            </div>
                             
-                            {/* Barres comparatives */}
-                            <div className="space-y-2">
-                                {weekData.current.map((d, i) => {
-                                    const prev = weekData.previous[i];
-                                    const maxCost = Math.max(...weekData.current.map(x => x.cost), ...weekData.previous.map(x => x.cost), 0.1);
-                                    return (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <span className="w-8 text-xs text-gray-500">{d.day}</span>
-                                            <div className="flex-1 flex gap-1">
-                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-emerald-500 rounded" 
-                                                        style={{ width: `${(d.cost / maxCost) * 100}%` }}
-                                                    />
-                                                </div>
-                                                <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-slate-400 rounded" 
-                                                        style={{ width: `${((prev?.cost || 0) / maxCost) * 100}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <span className="w-24 text-xs text-right">
-                                                <span className="text-emerald-600 font-medium">{d.cost.toFixed(2)}€</span>
-                                                <span className="text-gray-400 mx-1">/</span>
-                                                <span className="text-gray-500">{prev?.cost.toFixed(2) || "0"}€</span>
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex gap-4 mt-3 text-xs text-gray-500">
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500 rounded" /> Cette semaine</span>
-                                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-slate-400 rounded" /> Semaine précédente</span>
+                            {/* Légende */}
+                            <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-slate-100 text-xs text-gray-500">
+                                <div className="flex items-center gap-4">
+                                    <span className="font-medium">Cette semaine:</span>
+                                    <span className="flex items-center gap-1">
+                                        <span className={`w-3 h-3 rounded ${colors.hp}`} /> HP
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <span className={`w-3 h-3 rounded ${colors.hc}`} /> HC
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span className="font-medium">Sem. précédente:</span>
+                                    <span className="flex items-center gap-1">
+                                        <span className={`w-3 h-3 rounded ${colors.hpPrev}`} /> HP
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <span className={`w-3 h-3 rounded ${colors.hcPrev}`} /> HC
+                                    </span>
+                                </div>
                             </div>
                         </Section>
                     </div>
@@ -386,13 +421,11 @@ export default function PricingPage() {
                             <div className="mb-4 pb-4 border-b border-slate-100">
                                 <p className="text-xs text-gray-500 uppercase font-medium mb-2">Grille tarifaire (€/kWh)</p>
                                 <div className="space-y-2">
-                                    {/* En-tête */}
                                     <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 uppercase">
                                         <div></div>
                                         <div className="text-center">HC</div>
                                         <div className="text-center">HP</div>
                                     </div>
-                                    {/* Tarifs */}
                                     {[
                                         { name: "Bleu", color: "bg-sky-500", ...CONTRACT.tarifs.bleu },
                                         { name: "Blanc", color: "bg-white border border-gray-300", ...CONTRACT.tarifs.blanc },
@@ -403,12 +436,8 @@ export default function PricingPage() {
                                                 <span className={`w-2.5 h-2.5 rounded-full ${t.color}`} />
                                                 <span className="text-xs text-gray-700">{t.name}</span>
                                             </div>
-                                            <div className={`text-center text-sm ${getPriceColor(t.hc)}`}>
-                                                {t.hc.toFixed(3)}
-                                            </div>
-                                            <div className={`text-center text-sm ${getPriceColor(t.hp)}`}>
-                                                {t.hp.toFixed(3)}
-                                            </div>
+                                            <div className={`text-center text-sm ${getPriceColor(t.hc)}`}>{t.hc.toFixed(3)}</div>
+                                            <div className={`text-center text-sm ${getPriceColor(t.hp)}`}>{t.hp.toFixed(3)}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -417,9 +446,7 @@ export default function PricingPage() {
                             {/* Saison Tempo */}
                             {seasonStats && (
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase font-medium mb-2">
-                                        Saison {seasonStats.periode}
-                                    </p>
+                                    <p className="text-xs text-gray-500 uppercase font-medium mb-2">Saison {seasonStats.periode}</p>
                                     <div className="space-y-2">
                                         {[
                                             { name: "Bleu", color: "bg-sky-500", used: seasonStats.bleu, total: 300 },
@@ -436,9 +463,7 @@ export default function PricingPage() {
                                                         />
                                                     </div>
                                                 </div>
-                                                <span className="text-xs text-gray-600 w-12 text-right font-medium">
-                                                    {t.used}/{t.total}
-                                                </span>
+                                                <span className="text-xs text-gray-600 w-12 text-right font-medium">{t.used}/{t.total}</span>
                                             </div>
                                         ))}
                                     </div>
