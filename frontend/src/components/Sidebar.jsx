@@ -16,6 +16,13 @@ const HomeIcon = () => (
     </svg>
 );
 
+// Icône Production (éclair)
+const BoltIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+        <path fillRule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.718a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .945-.143Z" clipRule="evenodd" />
+    </svg>
+);
+
 // Icône € simple
 const EuroIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -46,6 +53,7 @@ const CloseIcon = () => (
 
 const menuItems = [
     { path: "/", label: "Tableau de bord", icon: <HomeIcon /> },
+    { path: "/production", label: "Production", icon: <BoltIcon /> },
     { path: "/pricing", label: "Suivi des coûts", icon: <EuroIcon /> },
     { path: "/settings", label: "Réglages", icon: <SettingsIcon /> },
 ];

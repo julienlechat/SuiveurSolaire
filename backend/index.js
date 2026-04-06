@@ -48,6 +48,7 @@ app.get("/api/latest", async (req, res) => {
               mp.name        AS point_name,
               mp.module,
               mp.channel,
+              mp.is_producer,
               m.ts,
               m.power_w,
               m.voltage_v,
@@ -349,6 +350,7 @@ app.get("/api/history-graph", async (req, res) => {
             SELECT
                 mp.id AS point_id,
                 mp.name AS point_name,
+                mp.is_producer,
                 COUNT(*) AS measurement_count,
                 AVG(m.power_w) AS avg_power,
                 MAX(m.power_w) AS max_power,
@@ -359,7 +361,7 @@ app.get("/api/history-graph", async (req, res) => {
             WHERE m.ts >= $1
               AND m.ts <= $2
               AND mp.active = true
-            GROUP BY mp.id, mp.name
+            GROUP BY mp.id, mp.name, mp.is_producer
             ORDER BY mp.id
         `;
 
@@ -383,6 +385,7 @@ app.get("/api/history-graph", async (req, res) => {
             return {
                 point_id: row.point_id,
                 point_name: row.point_name,
+                is_producer: row.is_producer,
                 measurement_count: parseInt(row.measurement_count || 0),
                 import_kwh: importKwh,
                 export_kwh: exportKwh,
